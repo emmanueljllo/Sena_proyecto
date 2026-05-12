@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Confort Market</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="gold-text">Confort</span> Market
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Volver a Tienda</a>
+            <a href="login.html">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active">Resumen de Cuenta</a></li>
+                <li><a href="#">Mis Pedidos</a></li>
+                <li><a href="#">Métodos de Pago</a></li>
+                <li><a href="#">Configuración de Seguridad</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Bienvenido, <span class="gold-gradient">Usuario</span></h2>
+            
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h4>Compras Realizadas</h4>
+                    <div class="stat-value">12</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Nivel de Seguridad</h4>
+                    <div class="stat-value" style="color: #4CAF50;">Alto</div>
+                    <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">MFA Activado</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Próxima Entrega</h4>
+                    <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Mañana, 10:00 AM</div>
+                </div>
+            </div>
+
+            <div class="bcp-phase">
+                <h3>Últimos Pedidos</h3>
+                <table class="bcp-table">
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#10045</td>
+                            <td>10 Mayo 2026</td>
+                            <td>ConfortBook Pro X</td>
+                            <td style="color: #4CAF50;">En camino</td>
+                            <td>$1,499.00</td>
+                        </tr>
+                        <tr>
+                            <td>#10044</td>
+                            <td>02 Mayo 2026</td>
+                            <td>Aura Sound Max</td>
+                            <td style="color: var(--text-secondary);">Entregado</td>
+                            <td>$299.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Confort Market BCP</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="gold-text">Admin</span> BCP
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Vista Tienda</a>
+            <a href="login.html">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active">Estado General</a></li>
+                <li><a href="#">Gestión de Backups</a></li>
+                <li><a href="#">Monitoreo de Servidores</a></li>
+                <li><a href="#">Simulacros DRP</a></li>
+                <li><a href="#">Auditoría de Incidentes</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Centro de <span class="gold-gradient">Comando BCP</span></h2>
+            
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h4>Estado del Servidor Principal</h4>
+                    <div class="stat-value" style="color: #4CAF50; font-size: 2rem;">Operativo</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Último Backup Local</h4>
+                    <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Hace 2 horas</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Último Backup Offline</h4>
+                    <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Hace 3 días</div>
+                </div>
+            </div>
+
+            <div class="bcp-phase">
+                <h3>Monitoreo de Infraestructura y RTO/RPO</h3>
+                <table class="bcp-table">
+                    <thead>
+                        <tr>
+                            <th>Servicio Crítico</th>
+                            <th>Estado Actual</th>
+                            <th>RTO Definido</th>
+                            <th>RPO Definido</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Base de datos de clientes</td>
+                            <td style="color: #4CAF50;">Sincronizado</td>
+                            <td>1 hora</td>
+                            <td>15 minutos</td>
+                            <td><button class="buy-btn" style="padding: 0.3rem;">Test DRP</button></td>
+                        </tr>
+                        <tr>
+                            <td>Sistema de Pagos</td>
+                            <td style="color: #4CAF50;">Activo</td>
+                            <td>30 minutos</td>
+                            <td>5 minutos</td>
+                            <td><button class="buy-btn" style="padding: 0.3rem;">Test DRP</button></td>
+                        </tr>
+                        <tr>
+                            <td>Protección Anti-DDoS</td>
+                            <td style="color: #ffa64d;">Alerta Menor</td>
+                            <td>Inmediato</td>
+                            <td>N/A</td>
+                            <td><button class="buy-btn" style="padding: 0.3rem;">Ver Logs</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

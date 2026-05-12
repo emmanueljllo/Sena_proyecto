@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confort Market - Resiliencia Ransomware</title>
+    <meta name="description" content="Plan de Continuidad del Negocio y Resiliencia ante Ataques de Ransomware para Confort Market">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="gold-text">Confort</span> Market
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="#bcp-section">Plan BCP</a>
+            <a href="#products">Productos</a>
+            <a href="login.html">Login</a>
+            <a href="register.html">Registro</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="admin.html">Admin</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="badge">Escenario 4: E-Commerce</div>
+            <h1>Resiliencia ante <span class="gold-gradient">Ataques de Ransomware</span></h1>
+            <p>Estrategia integral de protección y continuidad del negocio para la plataforma de ventas online frente a secuestros de información y denegación de servicios.</p>
+            <button class="cta-btn" id="explore-btn">Explorar Plan</button>
+        </div>
+        <div class="hero-background">
+            <div class="glow-orb"></div>
+        </div>
+    </header>
+
+    <main class="content-section" id="bcp-section">
+        <h2 class="section-title">Plan de Continuidad del Negocio (BCP)</h2>
+        
+        <!-- Fase 1 -->
+        <div class="bcp-phase">
+            <h3>Fase 1 – Análisis del Escenario</h3>
+            <p>Se propone un modelo de comercio electrónico tipo marketplace similar a plataformas como Amazon. Se identificaron activos críticos y riesgos principales.</p>
+            
+            <h4>Matriz Simple de Riesgos</h4>
+            <table class="bcp-table">
+                <thead>
+                    <tr>
+                        <th>Riesgo</th>
+                        <th>Probabilidad</th>
+                        <th>Impacto</th>
+                        <th>Nivel de Riesgo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ransomware</td>
+                        <td>Alta</td>
+                        <td>Alto</td>
+                        <td class="risk-crit">Crítico</td>
+                    </tr>
+                    <tr>
+                        <td>DDoS</td>
+                        <td>Media</td>
+                        <td>Alto</td>
+                        <td class="risk-high">Alto</td>
+                    </tr>
+                    <tr>
+                        <td>Pérdida de datos</td>
+                        <td>Media</td>
+                        <td>Alto</td>
+                        <td class="risk-high">Alto</td>
+                    </tr>
+                    <tr>
+                        <td>Falla del servidor</td>
+                        <td>Media</td>
+                        <td>Medio</td>
+                        <td class="risk-med">Medio</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Fase 2 -->
+        <div class="bcp-phase">
+            <h3>Fase 2 – Plan de Continuidad del Negocio</h3>
+            <p>El objetivo principal es garantizar la disponibilidad continua de la plataforma de comercio electrónico. Se han definido estrategias de continuidad y tiempos objetivo de recuperación.</p>
+            
+            <h4>Métricas de Recuperación (RTO y RPO)</h4>
+            <table class="bcp-table">
+                <thead>
+                    <tr>
+                        <th>Servicio / Activo</th>
+                        <th>RTO (Recovery Time)</th>
+                        <th>RPO (Recovery Point)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Servidor web</td>
+                        <td>2 horas</td>
+                        <td>30 minutos</td>
+                    </tr>
+                    <tr>
+                        <td>Base de datos de clientes</td>
+                        <td>1 hora</td>
+                        <td>15 minutos</td>
+                    </tr>
+                    <tr>
+                        <td>Sistema de pagos</td>
+                        <td>30 minutos</td>
+                        <td>5 minutos</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Fase 3 -->
+        <div class="bcp-phase">
+            <h3>Fase 3 – Backups Automatizados</h3>
+            <p>Diseño de una estrategia de copias de seguridad para recuperar la información crítica del e-commerce ante incidentes como ransomware o fallas del servidor.</p>
+            <ul>
+                <li><strong>Backup Local:</strong> Almacenamiento en infraestructura interna para recuperación rápida.</li>
+                <li><strong>Backup en la Nube:</strong> Alta disponibilidad y protección ante desastres físicos.</li>
+                <li><strong>Backup Offline:</strong> Desconectado físicamente de la red (Protección contra Ransomware).</li>
+            </ul>
+        </div>
+    </main>
+
+    <section id="products" class="products-section">
+        <h2 class="section-title">Catálogo <span class="gold-gradient">Premium</span></h2>
+        <div class="products-grid">
+            <!-- Producto 1 -->
+            <div class="product-card">
+                <img src="assets/premium_laptop_1778531221300.png" alt="Laptop Premium" class="product-image">
+                <div class="product-info">
+                    <h3>ConfortBook Pro X</h3>
+                    <p class="product-price">$1,499.00</p>
+                    <button class="buy-btn">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 2 -->
+            <div class="product-card">
+                <img src="assets/premium_smartwatch_1778531397408.png" alt="Smartwatch Premium" class="product-image">
+                <div class="product-info">
+                    <h3>Chrono Elite Gold</h3>
+                    <p class="product-price">$399.00</p>
+                    <button class="buy-btn">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 3 -->
+            <div class="product-card">
+                <img src="assets/premium_headphones_1778531409537.png" alt="Audífonos Premium" class="product-image">
+                <div class="product-info">
+                    <h3>Aura Sound Max</h3>
+                    <p class="product-price">$299.00</p>
+                    <button class="buy-btn">Añadir al Carrito</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Confort Market. Seguridad y Resiliencia.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
