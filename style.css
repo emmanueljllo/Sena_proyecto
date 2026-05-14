@@ -598,3 +598,20 @@ footer {
         margin-left: 0;
     }
 }
+
+/* Glassmorphism Enhancements */
+.card, .auth-box, .bcp-phase, .stat-card {
+    background: rgba(17, 17, 17, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Cart Specific */
+#cart-items > div {
+    transition: background-color 0.3s ease;
+}
+#cart-items > div:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}

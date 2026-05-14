@@ -51,3 +51,17 @@ INSERT IGNORE INTO bcp_logs (event_type, status, description) VALUES
 ('backup_local', 'success', 'Copia de seguridad local completada correctamente.'),
 ('backup_offline', 'success', 'Disco externo desconectado de la red según el protocolo BCP.'),
 ('server_status', 'success', 'Servidor principal operativo al 100%.');
+
+
+-- 5. Tabla de Pagos (Simulada para Checkout Seguro)
+CREATE TABLE IF NOT EXISTS payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    status ENUM('processing', 'completed', 'failed') DEFAULT 'processing',
+    transaction_id VARCHAR(100) UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+

@@ -77,6 +77,40 @@
                     </tbody>
                 </table>
             </div>
+
+            <div class="bcp-phase" style="margin-top: 3rem; border-color: rgba(76, 175, 80, 0.3);">
+                <h3 style="color: #4CAF50;">Centro de Seguridad (BCP)</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Monitorización de cuenta bajo el protocolo de Continuidad del Negocio.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4>Autenticación Multifactor (MFA)</h4>
+                            <span style="background: rgba(76, 175, 80, 0.2); color: #4CAF50; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">ACTIVADO</span>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Tu cuenta está protegida con verificación en dos pasos. Las claves de respaldo han sido generadas.</p>
+                        <button class="buy-btn" style="margin-top: 1rem; width: auto; padding: 0.5rem 1rem; font-size: 0.9rem; border-color: var(--text-secondary); color: var(--text-secondary);">Administrar MFA</button>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="margin-bottom: 1rem;">Actividad Reciente</h4>
+                        <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
+                            <li style="display: flex; justify-content: space-between; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                                <span><span style="color:#4CAF50;">●</span> Inicio de sesión exitoso</span>
+                                <span style="color: var(--text-secondary);">Hace 2 min (IP: 192.168.1.45)</span>
+                            </li>
+                            <li style="display: flex; justify-content: space-between; margin-bottom: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.5rem;">
+                                <span><span style="color:var(--gold-primary);">●</span> Intento bloqueado</span>
+                                <span style="color: var(--text-secondary);">Ayer (IP: 203.0.113.5)</span>
+                            </li>
+                            <li style="display: flex; justify-content: space-between;">
+                                <span><span style="color:#4CAF50;">●</span> Cambio de contraseña</span>
+                                <span style="color: var(--text-secondary);">Hace 1 mes</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script src="script.js"></script>

@@ -40,4 +40,114 @@ document.addEventListener('DOMContentLoaded', () => {
             glowOrb.style.transform = `translate(calc(-50% + ${x * 40}px), calc(-50% + ${y * 40}px))`;
         }
     });
+
+    // --- CART LOGIC ---
+    let cart = JSON.parse(localStorage.getItem('confort_cart')) || [];
+    
+    function updateCartUI() {
+        const cartCounts = document.querySelectorAll('#cart-count');
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        cartCounts.forEach(el => el.textContent = totalItems);
+
+        // Update checkout page if we are on it
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartTotalEl = document.getElementById('cart-total');
+        
+        if (cartItemsContainer && cartTotalEl) {
+            cartItemsContainer.innerHTML = '';
+            let total = 0;
+            
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p style="color:var(--text-secondary);">El carrito está vacío.</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price * item.quantity;
+                    const itemEl = document.createElement('div');
+                    itemEl.style.display = 'flex';
+                    itemEl.style.justifyContent = 'space-between';
+                    itemEl.style.marginBottom = '1rem';
+                    itemEl.style.paddingBottom = '1rem';
+                    itemEl.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                    
+                    itemEl.innerHTML = `
+                        <div>
+                            <h4 style="margin:0;">${item.name}</h4>
+                            <small style="color:var(--text-secondary);">Cantidad: ${item.quantity}</small>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="gold-text">$${(item.price * item.quantity).toFixed(2)}</div>
+                            <button class="remove-item-btn" data-index="${index}" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:0.8rem; margin-top:5px;">Eliminar</button>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(itemEl);
+                });
+            }
+            cartTotalEl.textContent = `$${total.toFixed(2)}`;
+
+            // Add remove event listeners
+            document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = e.target.getAttribute('data-index');
+                    cart.splice(idx, 1);
+                    localStorage.setItem('confort_cart', JSON.stringify(cart));
+                    updateCartUI();
+                });
+            });
+        }
+    }
+
+    // Add to cart buttons
+    const addToCartBtns = document.querySelectorAll('.add-to-cart-btn');
+    addToCartBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const price = parseFloat(btn.getAttribute('data-price'));
+            
+            const existingItem = cart.find(item => item.id === id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ id, name, price, quantity: 1 });
+            }
+            
+            localStorage.setItem('confort_cart', JSON.stringify(cart));
+            updateCartUI();
+            
+            // Visual feedback
+            const originalText = btn.textContent;
+            btn.textContent = '¡Añadido!';
+            btn.style.background = 'var(--gold-primary)';
+            btn.style.color = '#000';
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--gold-primary)';
+            }, 1000);
+        });
+    });
+
+    // Initialize cart UI
+    updateCartUI();
+
+    // Checkout Form Submission
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (cart.length === 0) {
+                alert('Tu carrito está vacío. Agrega productos antes de pagar.');
+                return;
+            }
+            
+            // Show success modal
+            const successModal = document.getElementById('success-modal');
+            successModal.style.display = 'flex';
+            
+            // Clear cart
+            cart = [];
+            localStorage.setItem('confort_cart', JSON.stringify(cart));
+            updateCartUI();
+        });
+    }
 });
