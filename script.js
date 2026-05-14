@@ -54,9 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const exploreBtn = document.getElementById('explore-btn');
     const planSection = document.getElementById('plan-section');
 
-    exploreBtn.addEventListener('click', () => {
-        planSection.scrollIntoView({ behavior: 'smooth' });
-    });
+    if (exploreBtn && planSection) {
+        exploreBtn.addEventListener('click', () => {
+            planSection.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
 
     // Intersection Observer for scroll animations
     const cards = document.querySelectorAll('.card');
@@ -201,4 +203,22 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCartUI();
         });
     }
+
+    // Dashboard UI Simulation
+    if (currentPage === 'dashboard.html') {
+        const mfaBtn = document.querySelector('.bcp-phase button');
+        if (mfaBtn) {
+            mfaBtn.addEventListener('click', () => {
+                alert('Configuración de MFA será habilitada al conectar el servidor Backend.');
+            });
+        }
+    }
+
+    // Prevent default on empty links
+    document.querySelectorAll('a[href="#"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Esta sección se encuentra en desarrollo.');
+        });
+    });
 });
