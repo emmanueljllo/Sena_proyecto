@@ -1,4 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- AUTH GUARD LOGIC ---
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const isAuthPage = currentPage === 'login.html' || currentPage === 'register.html';
+    const isLoggedIn = localStorage.getItem('confort_user_logged_in') === 'true';
+
+    // 1. Redirigir a login si no está logueado y no está en una página de auth
+    if (!isLoggedIn && !isAuthPage) {
+        window.location.href = 'login.html';
+        return; // Detiene la ejecución del resto de scripts
+    }
+
+    // 2. Lógica para el formulario de Login
+    if (currentPage === 'login.html') {
+        const loginForm = document.querySelector('form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                localStorage.setItem('confort_user_logged_in', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+    }
+
+    // 3. Lógica para el formulario de Registro
+    if (currentPage === 'register.html') {
+        const registerForm = document.querySelector('form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault(); // Evitamos que el formulario haga submit normal
+                localStorage.setItem('confort_user_logged_in', 'true');
+                window.location.href = 'index.html';
+            });
+        }
+    }
+
+    // 4. Lógica de Cerrar Sesión y Ocultar "Registro" si ya está logueado
+    if (isLoggedIn) {
+        document.querySelectorAll('a[href="login.html"]').forEach(btn => {
+            btn.textContent = 'Cerrar Sesión';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('confort_user_logged_in');
+                window.location.href = 'login.html';
+            });
+        });
+        
+        document.querySelectorAll('a[href="register.html"]').forEach(btn => {
+            btn.style.display = 'none';
+        });
+    }
+
     // Smooth scrolling for the explore button
     const exploreBtn = document.getElementById('explore-btn');
     const planSection = document.getElementById('plan-section');
