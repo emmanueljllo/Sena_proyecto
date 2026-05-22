@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confort Market</title>
+    <meta name="description" content="Bienvenido a Confort Market">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="auth-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="gold-text">Confort</span> Market
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="#products">Productos</a>
+            <a href="login.html">Login</a>
+            <a href="register.html">Registro</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="checkout.html" class="cart-link" style="position:relative; display:flex; align-items:center; gap:5px;">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                <span id="cart-count" style="background:var(--gold-primary); color:black; border-radius:50%; padding:2px 6px; font-size:12px; font-weight:bold;">0</span>
+            </a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="badge">E-Commerce</div>
+            <h1>Bienvenido a <span class="gold-gradient">Confort Market</span></h1>
+            <p>Descubre nuestro catálogo de productos premium con la mejor calidad y servicio garantizado.</p>
+            <button class="cta-btn" id="explore-btn">Ver Productos</button>
+        </div>
+        <div class="hero-background">
+            <div class="glow-orb"></div>
+        </div>
+    </header>
+
+
+
+    <section id="products" class="products-section">
+        <h2 class="section-title">Catálogo <span class="gold-gradient">Premium</span></h2>
+        <div class="products-grid">
+            <!-- Producto 1 -->
+            <div class="product-card">
+                <img src="assets/premium_laptop_1778531221300.png" alt="Laptop Premium" class="product-image">
+                <div class="product-info">
+                    <h3>ConfortBook Pro X</h3>
+                    <p class="product-price">$1,499.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="1" data-name="ConfortBook Pro X" data-price="1499.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 2 -->
+            <div class="product-card">
+                <img src="assets/premium_smartwatch_1778531397408.png" alt="Smartwatch Premium" class="product-image">
+                <div class="product-info">
+                    <h3>Chrono Elite Gold</h3>
+                    <p class="product-price">$399.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="2" data-name="Chrono Elite Gold" data-price="399.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 3 -->
+            <div class="product-card">
+                <img src="assets/premium_headphones_1778531409537.png" alt="Audífonos Premium" class="product-image">
+                <div class="product-info">
+                    <h3>Aura Sound Max</h3>
+                    <p class="product-price">$299.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="3" data-name="Aura Sound Max" data-price="299.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 4 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/monitor,technology/all" alt="Monitor Curvo 4K" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Monitor Vision 4K</h3>
+                    <p class="product-price">$450.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="4" data-name="Monitor Vision 4K" data-price="450.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 5 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/keyboard,gaming/all" alt="Teclado Mecánico" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Teclado Titan RGB</h3>
+                    <p class="product-price">$120.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="5" data-name="Teclado Titan RGB" data-price="120.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 6 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/mouse,gaming/all" alt="Ratón Gamer" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Ratón Viper Pro</h3>
+                    <p class="product-price">$85.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="6" data-name="Ratón Viper Pro" data-price="85.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 7 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/chair,office/all" alt="Silla Ergonómica" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Silla Ergonomic Plus</h3>
+                    <p class="product-price">$320.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="7" data-name="Silla Ergonomic Plus" data-price="320.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 8 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/webcam/all" alt="Cámara Web 4K" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Cámara Stream 4K</h3>
+                    <p class="product-price">$150.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="8" data-name="Cámara Stream 4K" data-price="150.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 9 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/microphone,studio/all" alt="Micrófono de Estudio" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Micro Studio Voice</h3>
+                    <p class="product-price">$190.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="9" data-name="Micro Studio Voice" data-price="190.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 10 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/vr,headset/all" alt="Gafas VR" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Gafas Reality Max</h3>
+                    <p class="product-price">$599.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="10" data-name="Gafas Reality Max" data-price="599.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 11 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/drone/all" alt="Drone Profesional" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Drone SkyEye Pro</h3>
+                    <p class="product-price">$899.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="11" data-name="Drone SkyEye Pro" data-price="899.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 12 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/tablet,drawing/all" alt="Tablet Gráfica" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Tablet ArtPad 12"</h3>
+                    <p class="product-price">$250.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="12" data-name="Tablet ArtPad 12" data-price="250.00">Añadir al Carrito</button>
+                </div>
+            </div>
+
+            <!-- Producto 13 -->
+            <div class="product-card">
+                <img src="https://loremflickr.com/500/500/speaker,smart/all" alt="Altavoz Inteligente" class="product-image" style="object-fit: cover;">
+                <div class="product-info">
+                    <h3>Altavoz Smart Echo</h3>
+                    <p class="product-price">$99.00</p>
+                    <button class="buy-btn add-to-cart-btn" data-id="13" data-name="Altavoz Smart Echo" data-price="99.00">Añadir al Carrito</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Confort Market. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

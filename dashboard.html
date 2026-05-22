@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Confort Market</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="auth-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <span class="gold-text">Confort</span> Market
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Volver a Tienda</a>
+            <a href="login.html">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active tab-link" data-target="resumen">Resumen de Cuenta</a></li>
+                <li><a href="#" class="tab-link" data-target="pedidos">Mis Pedidos</a></li>
+                <li><a href="#" class="tab-link" data-target="pago">Métodos de Pago</a></li>
+                <li><a href="#" class="tab-link" data-target="seguridad">Configuración de Seguridad</a></li>
+            </ul>
+        </aside>
+
+        <main class="dashboard-content">
+            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Bienvenido, <span class="gold-gradient" id="user-name-display">Usuario</span></h2>
+            
+            <!-- SECCIÓN: RESUMEN DE CUENTA -->
+            <div id="resumen" class="dashboard-section" style="display: block;">
+                <div class="stat-cards">
+                    <div class="stat-card">
+                        <h4>Compras Realizadas</h4>
+                        <div class="stat-value">12</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Nivel de Seguridad</h4>
+                        <div class="stat-value" style="color: #4CAF50;">Alto</div>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">MFA Activado</p>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Próxima Entrega</h4>
+                        <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Mañana, 10:00 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: MIS PEDIDOS -->
+            <div id="pedidos" class="dashboard-section" style="display: none;">
+                <div class="bcp-phase">
+                    <h3>Historial de Pedidos</h3>
+                    <table class="bcp-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pedido</th>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-list">
+                            <!-- Pedidos dinámicos aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: MÉTODOS DE PAGO -->
+            <div id="pago" class="dashboard-section" style="display: none;">
+                <div class="bcp-phase">
+                    <h3>Tarjetas Guardadas</h3>
+                    <div id="cards-list" style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                        
+                        <div id="add-card-btn" style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.2); width: 250px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                            <span style="color: var(--gold-primary); font-weight: bold;">+ Añadir Tarjeta</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: CONFIGURACIÓN DE SEGURIDAD -->
+            <div id="seguridad" class="dashboard-section" style="display: none;">
+                <div class="bcp-phase">
+                    <h3>Seguridad de la Cuenta</h3>
+                    
+                    <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4>Autenticación Multifactor (MFA)</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">Protege tu cuenta con una capa de seguridad adicional.</p>
+                        <button class="buy-btn" style="width: auto; background: var(--gold-primary); color: black;">Desactivar MFA</button>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4>Cambiar Contraseña</h4>
+                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; max-width: 400px;">
+                            <input type="password" placeholder="Contraseña Actual" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                            <input type="password" placeholder="Nueva Contraseña" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
+                            <button class="buy-btn" style="width: auto;">Actualizar Contraseña</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
