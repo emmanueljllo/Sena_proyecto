@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuthPages();
 });
 
-const logout = (e) => {
+window.logout = (e) => {
     if(e) e.preventDefault();
     localStorage.removeItem('confort_current_user');
     localStorage.removeItem('confort_user_logged_in');
@@ -412,7 +412,7 @@ window.removeFromCart = (id) => {
 
 // --- Lógica de Dashboard ---
 const initDashboardPage = () => {
-    if (!document.getElementById('dashboard-main')) return;
+    if (!document.querySelector('.dashboard-main')) return;
 
     if (currentUser) {
         document.getElementById('user-name-display').textContent = currentUser.username || currentUser.email;
