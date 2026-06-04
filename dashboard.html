@@ -3,111 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Confort Market</title>
+    <title>Mi Cuenta - Confort Market</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="auth-guard.js"></script>
+    <script>
+        // Auth Check Inmediato
+        if (!localStorage.getItem('confort_current_user')) {
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <span class="gold-text">Confort</span> Market
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loader-logo gold-gradient-text">Confort Market</div>
+        <div class="loader-bar"><div class="loader-progress"></div></div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-brand"><span class="gold-text">Confort</span> Market</a>
+        
+        <div class="nav-menu" id="nav-menu">
+            <a href="index.html" class="nav-link"><i class="fa-solid fa-house"></i> Inicio</a>
+            <a href="index.html#catalogo" class="nav-link"><i class="fa-solid fa-store"></i> Catálogo</a>
         </div>
-        <div class="nav-links">
-            <a href="index.html">Volver a Tienda</a>
-            <a href="login.html">Cerrar Sesión</a>
+
+        <div class="nav-actions">
+            <a href="checkout.html" class="btn-icon badge-icon">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="badge-count" id="cart-count">0</span>
+            </a>
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
         </div>
     </nav>
 
     <div class="dashboard-layout">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <ul class="sidebar-menu">
-                <li><a href="#" class="active tab-link" data-target="resumen">Resumen de Cuenta</a></li>
-                <li><a href="#" class="tab-link" data-target="pedidos">Mis Pedidos</a></li>
-                <li><a href="#" class="tab-link" data-target="pago">Métodos de Pago</a></li>
-                <li><a href="#" class="tab-link" data-target="seguridad">Configuración de Seguridad</a></li>
-            </ul>
+            <div class="user-profile">
+                <div class="avatar" id="avatar-initial">U</div>
+                <div class="user-info">
+                    <h3 id="user-name-display">Usuario</h3>
+                    <p id="user-email-display">usuario@email.com</p>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link active" data-tab="tab-overview">
+                    <i class="fa-solid fa-chart-pie"></i> Resumen
+                </a>
+                <a href="#" class="sidebar-link" data-tab="tab-orders">
+                    <i class="fa-solid fa-box-open"></i> Mis Pedidos
+                </a>
+                <a href="#" class="sidebar-link" data-tab="tab-wishlist">
+                    <i class="fa-solid fa-heart"></i> Lista de Deseos
+                </a>
+                <a href="#" class="sidebar-link" data-tab="tab-settings">
+                    <i class="fa-solid fa-gear"></i> Configuración
+                </a>
+                <a href="#" class="sidebar-link" onclick="logout(event)" style="margin-top: 1rem; color: #ff4757;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </a>
+            </nav>
         </aside>
 
-        <main class="dashboard-content">
-            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Bienvenido, <span class="gold-gradient" id="user-name-display">Usuario</span></h2>
-            
-            <!-- SECCIÓN: RESUMEN DE CUENTA -->
-            <div id="resumen" class="dashboard-section" style="display: block;">
-                <div class="stat-cards">
-                    <div class="stat-card">
-                        <h4>Compras Realizadas</h4>
-                        <div class="stat-value">12</div>
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <!-- Tab: Resumen -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="dashboard-header">
+                    <h2><span class="gold-text">Hola,</span> <span id="welcome-name">Usuario</span></h2>
+                    <p style="color:var(--text-secondary);">Bienvenido a tu panel de control premium.</p>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+                        <div class="stat-value" id="stat-orders">0</div>
+                        <div class="stat-label">Pedidos Realizados</div>
                     </div>
-                    <div class="stat-card">
-                        <h4>Nivel de Seguridad</h4>
-                        <div class="stat-value" style="color: #4CAF50;">Alto</div>
-                        <p style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">MFA Activado</p>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+                        <div class="stat-value" id="stat-spent">$0.00</div>
+                        <div class="stat-label">Total Invertido</div>
                     </div>
-                    <div class="stat-card">
-                        <h4>Próxima Entrega</h4>
-                        <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Mañana, 10:00 AM</div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-heart"></i></div>
+                        <div class="stat-value" id="stat-wishlist">0</div>
+                        <div class="stat-label">Artículos Deseados</div>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN: MIS PEDIDOS -->
-            <div id="pedidos" class="dashboard-section" style="display: none;">
-                <div class="bcp-phase">
-                    <h3>Historial de Pedidos</h3>
-                    <table class="bcp-table">
-                        <thead>
-                            <tr>
-                                <th>ID Pedido</th>
-                                <th>Fecha</th>
-                                <th>Producto</th>
-                                <th>Estado</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="orders-list">
-                            <!-- Pedidos dinámicos aquí -->
-                        </tbody>
-                    </table>
+            <!-- Tab: Mis Pedidos -->
+            <div id="tab-orders" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Historial de <span class="gold-text">Pedidos</span></h2>
+                </div>
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-tbody">
+                                <!-- JS Injects -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN: MÉTODOS DE PAGO -->
-            <div id="pago" class="dashboard-section" style="display: none;">
-                <div class="bcp-phase">
-                    <h3>Tarjetas Guardadas</h3>
-                    <div id="cards-list" style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
-                        
-                        <div id="add-card-btn" style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.2); width: 250px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                            <span style="color: var(--gold-primary); font-weight: bold;">+ Añadir Tarjeta</span>
+            <!-- Tab: Wishlist -->
+            <div id="tab-wishlist" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Tu Lista de <span class="gold-text">Deseos</span></h2>
+                    <p>Tus productos favoritos guardados para más tarde.</p>
+                </div>
+                <!-- Reutilizando la grilla de productos pero filtrada -->
+                <div style="color:var(--text-secondary);">
+                    <em>(La lista de deseos se renderiza en el catálogo principal en el inicio, o aquí en futuras actualizaciones.)</em>
+                    <br><br>
+                    <a href="index.html#catalogo" class="btn btn-outline">Ir al Catálogo</a>
+                </div>
+            </div>
+
+            <!-- Tab: Settings -->
+            <div id="tab-settings" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Configuración del <span class="gold-text">Perfil</span></h2>
+                </div>
+                <div class="glass-card" style="padding: 2rem; max-width: 600px;">
+                    <form>
+                        <div class="form-group">
+                            <label>Nombre de Usuario</label>
+                            <input type="text" class="form-control" style="padding-left:1rem;" value="Usuario">
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCIÓN: CONFIGURACIÓN DE SEGURIDAD -->
-            <div id="seguridad" class="dashboard-section" style="display: none;">
-                <div class="bcp-phase">
-                    <h3>Seguridad de la Cuenta</h3>
-                    
-                    <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <h4>Autenticación Multifactor (MFA)</h4>
-                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">Protege tu cuenta con una capa de seguridad adicional.</p>
-                        <button class="buy-btn" style="width: auto; background: var(--gold-primary); color: black;">Desactivar MFA</button>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" style="padding-left:1rem;" value="usuario@email.com" disabled>
+                        </div>
+                        <hr style="border-color:var(--glass-border); margin: 2rem 0;">
                         <h4>Cambiar Contraseña</h4>
-                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; max-width: 400px;">
-                            <input type="password" placeholder="Contraseña Actual" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
-                            <input type="password" placeholder="Nueva Contraseña" style="padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 4px;">
-                            <button class="buy-btn" style="width: auto;">Actualizar Contraseña</button>
+                        <br>
+                        <div class="form-group">
+                            <label>Nueva Contraseña</label>
+                            <input type="password" class="form-control" style="padding-left:1rem;">
                         </div>
-                    </div>
+                        <button type="button" class="btn btn-primary" onclick="showToast('Perfil actualizado correctamente')">
+                            Guardar Cambios
+                        </button>
+                    </form>
                 </div>
             </div>
         </main>
     </div>
+
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if(currentUser) {
+                document.getElementById('welcome-name').textContent = currentUser.username || 'Usuario';
+            }
+        });
+    </script>
 </body>
 </html>

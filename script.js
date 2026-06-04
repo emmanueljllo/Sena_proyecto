@@ -1,337 +1,557 @@
+// --- Datos de Productos ---
+const products = [
+    { id: 1, name: "ConfortBook Pro X", price: 1499.00, oldPrice: 1699.00, category: "Computadores", rating: 4.9, reviews: 128, image: "assets/premium_laptop_1778531221300.png", badge: "new" },
+    { id: 2, name: "Chrono Elite Gold", price: 399.00, oldPrice: null, category: "Accesorios", rating: 4.8, reviews: 85, image: "assets/premium_smartwatch_1778531397408.png", badge: null },
+    { id: 3, name: "Aura Sound Max", price: 299.00, oldPrice: 349.00, category: "Audio", rating: 4.7, reviews: 210, image: "assets/premium_headphones_1778531409537.png", badge: "sale" },
+    { id: 4, name: "Monitor Vision 4K", price: 450.00, oldPrice: null, category: "Computadores", rating: 4.6, reviews: 54, image: "https://picsum.photos/seed/monitor/500/500", badge: null },
+    { id: 5, name: "Teclado Titan RGB", price: 120.00, oldPrice: 150.00, category: "Accesorios", rating: 4.8, reviews: 320, image: "https://picsum.photos/seed/keyboard/500/500", badge: "sale" },
+    { id: 6, name: "Ratón Viper Pro", price: 85.00, oldPrice: null, category: "Accesorios", rating: 4.5, reviews: 112, image: "https://picsum.photos/seed/mouse/500/500", badge: null },
+    { id: 7, name: "Silla Ergonomic Plus", price: 320.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 89, image: "https://picsum.photos/seed/chair/500/500", badge: null },
+    { id: 8, name: "Cámara Stream 4K", price: 150.00, oldPrice: null, category: "Accesorios", rating: 4.4, reviews: 67, image: "https://picsum.photos/seed/webcam/500/500", badge: null },
+    { id: 9, name: "Micro Studio Voice", price: 190.00, oldPrice: 220.00, category: "Audio", rating: 4.9, reviews: 145, image: "https://picsum.photos/seed/mic/500/500", badge: "sale" },
+    { id: 10, name: "Gafas Reality Max", price: 599.00, oldPrice: null, category: "Drones", rating: 4.6, reviews: 34, image: "https://picsum.photos/seed/vr/500/500", badge: "new" },
+    { id: 11, name: "Drone SkyEye Pro", price: 899.00, oldPrice: 999.00, category: "Drones", rating: 4.8, reviews: 42, image: "https://picsum.photos/seed/drone/500/500", badge: "sale" },
+    { id: 12, name: "Tablet ArtPad 12\"", price: 250.00, oldPrice: null, category: "Computadores", rating: 4.5, reviews: 76, image: "https://picsum.photos/seed/tablet/500/500", badge: null },
+    { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "https://picsum.photos/seed/speaker/500/500", badge: null }
+];
+
+// --- Estado Global ---
+let currentUser = JSON.parse(localStorage.getItem('confort_current_user')) || null;
+let userCartKey = currentUser ? `confort_cart_${currentUser.email}` : 'confort_cart_guest';
+let userWishlistKey = currentUser ? `confort_wishlist_${currentUser.email}` : 'confort_wishlist_guest';
+
+let cart = JSON.parse(localStorage.getItem(userCartKey)) || [];
+let wishlist = JSON.parse(localStorage.getItem(userWishlistKey)) || [];
+
+// --- Funciones Utilitarias ---
+
+// Formatear precio
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+};
+
+// Toasts
+const showToast = (message, type = 'success') => {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:#2ed573; font-size:1.2rem;"></i>' : 
+                 type === 'error' ? '<i class="fa-solid fa-circle-exclamation" style="color:#ff4757; font-size:1.2rem;"></i>' : 
+                 '<i class="fa-solid fa-circle-info" style="color:#3498db; font-size:1.2rem;"></i>';
+
+    toast.innerHTML = `
+        ${icon}
+        <div style="font-weight:500;">${message}</div>
+        <div class="toast-progress"></div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideInRight 0.3s ease reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+};
+
+// --- Navbar & UI Global ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. (Lógica de redirección movida a auth-guard.js)
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const isLoggedIn = localStorage.getItem('confort_user_logged_in') === 'true';
-
-    // 2. Lógica para el formulario de Login
-    if (currentPage === 'login.html') {
-        const loginForm = document.querySelector('form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                let users = JSON.parse(localStorage.getItem('confort_users')) || [];
-                const userExists = users.find(u => u.email === email && u.password === password);
-                
-                if (userExists) {
-                    localStorage.setItem('confort_user_logged_in', 'true');
-                    localStorage.setItem('confort_current_user', JSON.stringify({ name: userExists.name, email: userExists.email }));
-                    window.location.href = 'index.html';
-                } else {
-                    alert('Credenciales incorrectas. Verifica tu correo o contraseña. Si no tienes cuenta, por favor regístrate.');
-                }
-            });
+    // Loading Screen
+    setTimeout(() => {
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
         }
-    }
+    }, 1000);
 
-    // 3. Lógica para el formulario de Registro
-    if (currentPage === 'register.html') {
-        const registerForm = document.querySelector('form');
-        if (registerForm) {
-            registerForm.addEventListener('submit', (e) => {
-                e.preventDefault(); // Evitamos que el formulario haga submit normal
-                const name = document.getElementById('name').value;
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                let users = JSON.parse(localStorage.getItem('confort_users')) || [];
-                const emailExists = users.find(u => u.email === email);
-                
-                if (emailExists) {
-                    alert('Este correo electrónico ya está registrado. Por favor, inicia sesión.');
-                    return;
-                }
-                
-                users.push({ name, email, password });
-                localStorage.setItem('confort_users', JSON.stringify(users));
-                
-                localStorage.setItem('confort_user_logged_in', 'true');
-                localStorage.setItem('confort_current_user', JSON.stringify({ name, email }));
-                
-                alert('¡Registro exitoso! Bienvenido a Confort Market.');
-                window.location.href = 'index.html';
-            });
-        }
-    }
-
-    // 4. Lógica de Cerrar Sesión y Ocultar "Registro" si ya está logueado
-    if (isLoggedIn) {
-        document.querySelectorAll('a[href="login.html"]').forEach(btn => {
-            btn.textContent = 'Cerrar Sesión';
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                localStorage.removeItem('confort_user_logged_in');
-                window.location.href = 'login.html';
-            });
-        });
-        
-        document.querySelectorAll('a[href="register.html"]').forEach(btn => {
-            btn.style.display = 'none';
-        });
-    }
-
-    // Smooth scrolling for the explore button
-    const exploreBtn = document.getElementById('explore-btn');
-    const productsSection = document.getElementById('products');
-
-    if (exploreBtn && productsSection) {
-        exploreBtn.addEventListener('click', () => {
-            productsSection.scrollIntoView({ behavior: 'smooth' });
-        });
-    }
-
-    // Intersection Observer for scroll animations
-    const cards = document.querySelectorAll('.card');
+    // Navbar Scroll Effect
+    const navbar = document.getElementById('navbar');
+    const backToTop = document.getElementById('back-to-top');
     
-    const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-    };
-
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target); // Stop observing once visible
-            }
-        });
-    }, observerOptions);
-
-    cards.forEach(card => {
-        observer.observe(card);
-    });
-
-    // Dynamic mouse glow effect
-    document.addEventListener('mousemove', (e) => {
-        const glowOrb = document.querySelector('.glow-orb');
-        if (glowOrb) {
-            const x = e.clientX / window.innerWidth;
-            const y = e.clientY / window.innerHeight;
-            
-            // Move orb slightly based on mouse position
-            glowOrb.style.transform = `translate(calc(-50% + ${x * 40}px), calc(-50% + ${y * 40}px))`;
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            if(navbar) navbar.classList.add('scrolled');
+            if(backToTop) backToTop.classList.add('visible');
+        } else {
+            if(navbar) navbar.classList.remove('scrolled');
+            if(backToTop) backToTop.classList.remove('visible');
         }
     });
 
-    // --- CART LOGIC ---
-    let cart = JSON.parse(localStorage.getItem('confort_cart')) || [];
-    
-    function updateCartUI() {
-        const cartCounts = document.querySelectorAll('#cart-count');
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartCounts.forEach(el => el.textContent = totalItems);
+    // Mobile Menu
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('nav-menu');
+    if (hamburger && navMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+    }
 
-        // Update checkout page if we are on it
-        const cartItemsContainer = document.getElementById('cart-items');
-        const cartTotalEl = document.getElementById('cart-total');
-        
-        if (cartItemsContainer && cartTotalEl) {
-            cartItemsContainer.innerHTML = '';
-            let total = 0;
-            
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<p style="color:var(--text-secondary);">El carrito está vacío.</p>';
-            } else {
-                cart.forEach((item, index) => {
-                    total += item.price * item.quantity;
-                    const itemEl = document.createElement('div');
-                    itemEl.style.display = 'flex';
-                    itemEl.style.justifyContent = 'space-between';
-                    itemEl.style.marginBottom = '1rem';
-                    itemEl.style.paddingBottom = '1rem';
-                    itemEl.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-                    
-                    itemEl.innerHTML = `
-                        <div>
-                            <h4 style="margin:0;">${item.name}</h4>
-                            <small style="color:var(--text-secondary);">Cantidad: ${item.quantity}</small>
-                        </div>
-                        <div style="text-align:right;">
-                            <div class="gold-text">$${(item.price * item.quantity).toFixed(2)}</div>
-                            <button class="remove-item-btn" data-index="${index}" style="background:none; border:none; color:#ff4d4d; cursor:pointer; font-size:0.8rem; margin-top:5px;">Eliminar</button>
-                        </div>
-                    `;
-                    cartItemsContainer.appendChild(itemEl);
-                });
-            }
-            cartTotalEl.textContent = `$${total.toFixed(2)}`;
-
-            // Add remove event listeners
-            document.querySelectorAll('.remove-item-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = e.target.getAttribute('data-index');
-                    cart.splice(idx, 1);
-                    localStorage.setItem('confort_cart', JSON.stringify(cart));
-                    updateCartUI();
-                });
-            });
+    // Auth Links
+    const authLinks = document.getElementById('nav-auth-links');
+    if (authLinks) {
+        if (currentUser) {
+            authLinks.innerHTML = `
+                <a href="#" onclick="logout(event)" class="nav-link" style="color:var(--text-secondary)"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
+            `;
+        } else {
+            authLinks.innerHTML = `
+                <a href="login.html" class="nav-link"><i class="fa-regular fa-user"></i> Login</a>
+                <a href="register.html" class="nav-link" style="color:var(--gold-primary)"><i class="fa-solid fa-user-plus"></i> Registro</a>
+            `;
         }
     }
 
-    // Add to cart buttons
-    const addToCartBtns = document.querySelectorAll('.add-to-cart-btn');
-    addToCartBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = btn.getAttribute('data-id');
-            const name = btn.getAttribute('data-name');
-            const price = parseFloat(btn.getAttribute('data-price'));
+    updateCartCount();
+    updateWishlistCount();
+    
+    // Inicializar páginas
+    initIndexPage();
+    initCheckoutPage();
+    initDashboardPage();
+    initAuthPages();
+});
+
+const logout = (e) => {
+    if(e) e.preventDefault();
+    localStorage.removeItem('confort_current_user');
+    localStorage.removeItem('confort_user_logged_in');
+    window.location.href = 'index.html';
+};
+
+// --- Funciones de Carrito y Wishlist ---
+
+const updateCartCount = () => {
+    const countEl = document.getElementById('cart-count');
+    if (countEl) {
+        const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+        countEl.textContent = total;
+        
+        // Animación pulse
+        countEl.style.animation = 'none';
+        countEl.offsetHeight; /* trigger reflow */
+        countEl.style.animation = 'pulse 0.3s ease';
+    }
+};
+
+const updateWishlistCount = () => {
+    const countEl = document.getElementById('wishlist-count');
+    if (countEl) countEl.textContent = wishlist.length;
+};
+
+const addToCart = (productId) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const existing = cart.find(item => item.id === productId);
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({ ...product, quantity: 1 });
+    }
+    
+    localStorage.setItem(userCartKey, JSON.stringify(cart));
+    updateCartCount();
+    showToast(`${product.name} agregado al carrito`);
+    renderCart(); // Si estamos en checkout
+};
+
+const toggleWishlist = (productId) => {
+    const idx = wishlist.indexOf(productId);
+    if (idx > -1) {
+        wishlist.splice(idx, 1);
+        showToast('Eliminado de la lista de deseos', 'info');
+    } else {
+        wishlist.push(productId);
+        showToast('Agregado a la lista de deseos ❤️');
+    }
+    localStorage.setItem(userWishlistKey, JSON.stringify(wishlist));
+    updateWishlistCount();
+    renderProducts(); // Re-renderizar para actualizar el estado del botón
+};
+
+// --- Lógica de la Página de Inicio (Index) ---
+
+const initIndexPage = () => {
+    const productsGrid = document.getElementById('products-grid');
+    if (!productsGrid) return; // No estamos en index.html
+
+    renderProducts();
+
+    // Búsqueda
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            renderProducts(e.target.value, document.querySelector('.filter-chip.active').dataset.filter);
+        });
+    }
+
+    // Filtros
+    const filters = document.querySelectorAll('.filter-chip');
+    filters.forEach(filter => {
+        filter.addEventListener('click', (e) => {
+            filters.forEach(f => f.classList.remove('active'));
+            e.target.classList.add('active');
             
-            const existingItem = cart.find(item => item.id === id);
-            if (existingItem) {
-                existingItem.quantity += 1;
-            } else {
-                cart.push({ id, name, price, quantity: 1 });
-            }
-            
-            localStorage.setItem('confort_cart', JSON.stringify(cart));
-            updateCartUI();
-            
-            // Visual feedback
-            const originalText = btn.textContent;
-            btn.textContent = '¡Añadido!';
-            btn.style.background = 'var(--gold-primary)';
-            btn.style.color = '#000';
-            setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = 'transparent';
-                btn.style.color = 'var(--gold-primary)';
-            }, 1000);
+            const searchTerm = document.getElementById('search-input').value;
+            renderProducts(searchTerm, e.target.dataset.filter);
+        });
+    });
+};
+
+const renderProducts = (search = '', category = 'all') => {
+    const productsGrid = document.getElementById('products-grid');
+    if (!productsGrid) return;
+
+    productsGrid.innerHTML = '';
+
+    let filtered = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+        const matchesCategory = category === 'all' || p.category === category;
+        return matchesSearch && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+        productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: var(--text-secondary);">No se encontraron productos.</div>`;
+        return;
+    }
+
+    filtered.forEach((p, index) => {
+        const delay = (index % 4) * 0.1;
+        const isWished = wishlist.includes(p.id);
+        
+        let badgesHtml = '<div class="product-badges">';
+        if (p.badge === 'new') badgesHtml += '<span class="product-badge badge-new">Nuevo</span>';
+        if (p.badge === 'sale') badgesHtml += '<span class="product-badge badge-sale">Oferta</span>';
+        badgesHtml += '</div>';
+
+        const oldPriceHtml = p.oldPrice ? `<span class="product-price-old">${formatPrice(p.oldPrice)}</span>` : '';
+
+        const card = document.createElement('div');
+        card.className = 'glass-card product-card animate-fade-up';
+        card.style.animationDelay = `${delay}s`;
+
+        card.innerHTML = `
+            ${badgesHtml}
+            <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${p.id})">
+                <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+            </button>
+            <img src="${p.image}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+                <span class="product-category">${p.category}</span>
+                <h3 class="product-title">${p.name}</h3>
+                <div class="product-rating">
+                    <span class="stars"><i class="fa-solid fa-star"></i> ${p.rating}</span>
+                    <span>(${p.reviews} reseñas)</span>
+                </div>
+                <div class="product-price-row">
+                    <div>
+                        <span class="product-price">${formatPrice(p.price)}</span>
+                        ${oldPriceHtml}
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart-btn" onclick="addToCart(${p.id})">
+                    <i class="fa-solid fa-cart-plus"></i> Añadir
+                </button>
+            </div>
+        `;
+        productsGrid.appendChild(card);
+    });
+};
+
+// --- Lógica de Checkout ---
+const initCheckoutPage = () => {
+    const checkoutContainer = document.getElementById('checkout-items');
+    if (!checkoutContainer) return;
+    
+    renderCart();
+
+    // Payment method selection
+    document.querySelectorAll('.payment-method').forEach(method => {
+        method.addEventListener('click', function() {
+            document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
+            this.classList.add('active');
         });
     });
 
-    // Initialize cart UI
-    updateCartUI();
+    // Form formatting
+    const ccInput = document.getElementById('cc-number');
+    if (ccInput) {
+        ccInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            e.target.value = value;
+        });
+    }
 
-    // Checkout Form Submission
+    const expInput = document.getElementById('cc-exp');
+    if (expInput) {
+        expInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) {
+                value = value.slice(0,2) + '/' + value.slice(2,4);
+            }
+            e.target.value = value;
+        });
+    }
+
+    // Checkout form submit
     const checkoutForm = document.getElementById('checkout-form');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (cart.length === 0) {
-                alert('Tu carrito está vacío. Agrega productos antes de pagar.');
+                showToast('El carrito está vacío', 'error');
                 return;
             }
-            
-            // Create Order
-            let orders = JSON.parse(localStorage.getItem('confort_orders')) || [];
-            const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            const newOrder = {
-                id: '#' + Math.floor(10000 + Math.random() * 90000), // Random 5 digit ID
-                date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
-                product: cart.length === 1 ? cart[0].name : `${cart.length} Productos`,
-                status: 'Procesando',
-                total: `$${totalPrice.toFixed(2)}`
-            };
-            
-            orders.unshift(newOrder); // Add to beginning
-            localStorage.setItem('confort_orders', JSON.stringify(orders));
 
-            // Show success modal
-            const successModal = document.getElementById('success-modal');
-            successModal.style.display = 'flex';
+            if (!currentUser) {
+                showToast('Debes iniciar sesión para comprar', 'error');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+
+            // Save order
+            const userOrdersKey = `confort_orders_${currentUser.email}`;
+            const orders = JSON.parse(localStorage.getItem(userOrdersKey)) || [];
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            orders.unshift({
+                id: 'ORD-' + Math.floor(Math.random() * 1000000),
+                date: new Date().toISOString(),
+                items: cart,
+                total: total + (total * 0.19), // + tax
+                status: 'Procesando'
+            });
+            
+            localStorage.setItem(userOrdersKey, JSON.stringify(orders));
             
             // Clear cart
             cart = [];
-            localStorage.setItem('confort_cart', JSON.stringify(cart));
-            updateCartUI();
+            localStorage.setItem(userCartKey, JSON.stringify(cart));
+            updateCartCount();
+
+            // Show success and redirect
+            showToast('¡Pedido realizado con éxito!');
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 2000);
         });
     }
+};
 
-    // Dashboard Logic
-    if (currentPage === 'dashboard.html') {
-        // --- Tabs Logic ---
-        const tabLinks = document.querySelectorAll('.tab-link');
-        const sections = document.querySelectorAll('.dashboard-section');
+const renderCart = () => {
+    const container = document.getElementById('checkout-items');
+    if (!container) return;
 
-        tabLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                tabLinks.forEach(t => t.classList.remove('active'));
-                sections.forEach(s => s.style.display = 'none');
-                link.classList.add('active');
-                const targetId = link.getAttribute('data-target');
-                const targetSection = document.getElementById(targetId);
-                if (targetSection) targetSection.style.display = 'block';
-            });
-        });
+    container.innerHTML = '';
+    let subtotal = 0;
 
-        // --- Render Orders ---
-        const ordersList = document.getElementById('orders-list');
-        if (ordersList) {
-            let orders = JSON.parse(localStorage.getItem('confort_orders')) || [];
-            if (orders.length === 0) {
-                ordersList.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-secondary);">No tienes pedidos recientes.</td></tr>';
-            } else {
-                ordersList.innerHTML = '';
-                orders.forEach(order => {
-                    ordersList.innerHTML += `
-                        <tr>
-                            <td>${order.id}</td>
-                            <td>${order.date}</td>
-                            <td>${order.product}</td>
-                            <td style="color: #ffa64d;">${order.status}</td>
-                            <td>${order.total}</td>
-                        </tr>
-                    `;
-                });
-            }
-        }
-
-        // --- Render and Add Cards ---
-        const cardsList = document.getElementById('cards-list');
-        
-        function renderCards() {
-            if (!cardsList) return;
-            let cards = JSON.parse(localStorage.getItem('confort_cards')) || [
-                // Default test card
-                { brand: 'VISA', default: true, last4: '4242', name: 'Usuario Confort', exp: '12/28' }
-            ];
-            
-            const addBtnHtml = `
-                <div id="add-card-btn" style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 10px; border: 1px dashed rgba(255,255,255,0.2); width: 250px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-                    <span style="color: var(--gold-primary); font-weight: bold;">+ Añadir Tarjeta</span>
-                </div>
-            `;
-            
-            cardsList.innerHTML = '';
-            cards.forEach(card => {
-                cardsList.innerHTML += `
-                    <div style="background: linear-gradient(135deg, #2b2b2b, #1a1a1a); padding: 1.5rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); width: 250px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                            <span style="font-weight: bold; color: var(--gold-primary);">${card.brand}</span>
-                            ${card.default ? '<span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Predeterminada</span>' : ''}
+    if (cart.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary); text-align:center;">El carrito está vacío.</p>';
+    } else {
+        cart.forEach((item, index) => {
+            subtotal += item.price * item.quantity;
+            const el = document.createElement('div');
+            el.className = 'summary-item animate-fade-up';
+            el.style.animationDelay = `${index * 0.1}s`;
+            el.innerHTML = `
+                <img src="${item.image}" alt="${item.name}">
+                <div class="summary-details" style="flex:1;">
+                    <h4>${item.name}</h4>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
+                        <div style="display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:4px;">
+                            <button style="background:none;border:none;color:white;cursor:pointer;" onclick="updateCartQuantity(${item.id}, -1)">-</button>
+                            <span>${item.quantity}</span>
+                            <button style="background:none;border:none;color:white;cursor:pointer;" onclick="updateCartQuantity(${item.id}, 1)">+</button>
                         </div>
-                        <div style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 1rem;">**** **** **** ${card.last4}</div>
-                        <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 0.9rem;">
-                            <span>${card.name}</span>
-                            <span>${card.exp}</span>
-                        </div>
+                        <span style="font-weight:bold; color:var(--gold-light);">${formatPrice(item.price * item.quantity)}</span>
                     </div>
-                `;
-            });
-            
-            cardsList.innerHTML += addBtnHtml;
-            
-            // Bind click to the newly rendered button
-            const newAddBtn = document.getElementById('add-card-btn');
-            if (newAddBtn) {
-                newAddBtn.addEventListener('click', () => {
-                    const cardNum = prompt('Introduce los últimos 4 dígitos de tu nueva tarjeta (Ej: 1234):');
-                    if (cardNum && cardNum.trim().length === 4) {
-                        cards.push({ brand: 'MASTERCARD', default: false, last4: cardNum, name: 'Usuario Confort', exp: '05/30' });
-                        localStorage.setItem('confort_cards', JSON.stringify(cards));
-                        renderCards();
-                    } else if (cardNum !== null) {
-                        alert('Debes introducir exactamente 4 dígitos.');
-                    }
-                });
-            }
-        }
-        
-        renderCards();
+                </div>
+                <button style="background:none;border:none;color:#ff4757;cursor:pointer;padding:0 10px;" onclick="removeFromCart(${item.id})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(el);
+        });
     }
-});
+
+    const tax = subtotal * 0.19;
+    const total = subtotal + tax;
+
+    document.getElementById('checkout-subtotal').textContent = formatPrice(subtotal);
+    document.getElementById('checkout-tax').textContent = formatPrice(tax);
+    document.getElementById('checkout-total').textContent = formatPrice(total);
+};
+
+window.updateCartQuantity = (id, delta) => {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            cart = cart.filter(i => i.id !== id);
+        }
+        localStorage.setItem(userCartKey, JSON.stringify(cart));
+        updateCartCount();
+        renderCart();
+    }
+};
+
+window.removeFromCart = (id) => {
+    cart = cart.filter(i => i.id !== id);
+    localStorage.setItem(userCartKey, JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+    showToast('Producto eliminado del carrito', 'info');
+};
+
+// --- Lógica de Dashboard ---
+const initDashboardPage = () => {
+    if (!document.getElementById('dashboard-main')) return;
+
+    if (currentUser) {
+        document.getElementById('user-name-display').textContent = currentUser.username || currentUser.email;
+        document.getElementById('user-email-display').textContent = currentUser.email;
+        document.getElementById('avatar-initial').textContent = (currentUser.username || currentUser.email).charAt(0).toUpperCase();
+    }
+
+    // Tabs
+    const links = document.querySelectorAll('.sidebar-link[data-tab]');
+    const tabs = document.querySelectorAll('.tab-content');
+
+    links.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            links.forEach(l => l.classList.remove('active'));
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            link.classList.add('active');
+            document.getElementById(link.dataset.tab).classList.add('active');
+        });
+    });
+
+    // Populate Data
+    if (currentUser) {
+        const userOrdersKey = `confort_orders_${currentUser.email}`;
+        const orders = JSON.parse(localStorage.getItem(userOrdersKey)) || [];
+        
+        // Stats
+        document.getElementById('stat-orders').textContent = orders.length;
+        const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
+        document.getElementById('stat-spent').textContent = formatPrice(totalSpent);
+        document.getElementById('stat-wishlist').textContent = wishlist.length;
+
+        // Orders Table
+        const tbody = document.getElementById('orders-tbody');
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No tienes pedidos recientes.</td></tr>';
+        } else {
+            orders.forEach(order => {
+                const tr = document.createElement('tr');
+                const statusClass = order.status === 'Procesando' ? 'status-processing' : 
+                                    order.status === 'Enviado' ? 'status-shipped' : 'status-delivered';
+                
+                tr.innerHTML = `
+                    <td><strong>${order.id}</strong></td>
+                    <td>${new Date(order.date).toLocaleDateString()}</td>
+                    <td>${formatPrice(order.total)}</td>
+                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+};
+
+// --- Auth Forms Validation ---
+const initAuthPages = () => {
+    // Password Strength
+    const passInput = document.getElementById('password');
+    const strengthBar = document.getElementById('strength-bar');
+    
+    if (passInput && strengthBar) {
+        passInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            let strength = 0;
+            if (val.length >= 8) strength += 25;
+            if (/[A-Z]/.test(val)) strength += 25;
+            if (/[0-9]/.test(val)) strength += 25;
+            if (/[^A-Za-z0-9]/.test(val)) strength += 25;
+            
+            strengthBar.style.width = strength + '%';
+            if (strength <= 25) strengthBar.style.background = '#ff4757';
+            else if (strength <= 50) strengthBar.style.background = '#ffa502';
+            else if (strength <= 75) strengthBar.style.background = '#2ed573';
+            else strengthBar.style.background = 'var(--gold-primary)';
+        });
+    }
+
+    // Register Form
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm-password').value;
+
+            if (password !== confirm) {
+                showToast('Las contraseñas no coinciden', 'error');
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            if (users.find(u => u.email === email)) {
+                showToast('El email ya está registrado', 'error');
+                return;
+            }
+
+            users.push({ username, email, password });
+            localStorage.setItem('confort_users', JSON.stringify(users));
+            showToast('Registro exitoso. Inicia sesión.');
+            setTimeout(() => window.location.href = 'login.html', 1500);
+        });
+    }
+
+    // Login Form
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                localStorage.setItem('confort_current_user', JSON.stringify({ email: user.email, username: user.username }));
+                localStorage.setItem('confort_user_logged_in', 'true');
+                showToast('Inicio de sesión exitoso');
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            } else {
+                showToast('Credenciales incorrectas', 'error');
+            }
+        });
+    }
+
+    // Toggle Password Visibility
+    document.querySelectorAll('.password-toggle').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const input = this.previousElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.classList.replace('fa-eye-slash', 'fa-eye');
+            } else {
+                input.type = 'password';
+                this.classList.replace('fa-eye', 'fa-eye-slash');
+            }
+        });
+    });
+};

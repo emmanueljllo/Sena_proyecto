@@ -3,96 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout Seguro - Confort Market</title>
+    <title>Checkout - Confort Market</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="auth-guard.js"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <span class="gold-text">Confort</span> Market
-        </div>
-        <div class="nav-links">
-            <a href="index.html">Volver a Tienda</a>
-            <a href="dashboard.html">Dashboard</a>
-            <a href="checkout.html" class="cart-link" style="position:relative; display:flex; align-items:center; gap:5px; color:var(--gold-primary);">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                <span id="cart-count" style="background:var(--gold-primary); color:black; border-radius:50%; padding:2px 6px; font-size:12px; font-weight:bold;">0</span>
-            </a>
-        </div>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loader-logo gold-gradient-text">Confort Market</div>
+        <div class="loader-bar"><div class="loader-progress"></div></div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-brand"><span class="gold-text">Confort</span> Market</a>
+        <a href="index.html" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size:0.9rem;">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Tienda
+        </a>
     </nav>
 
-    <div class="auth-container" style="align-items: flex-start; padding-top: 120px;">
-        <div class="checkout-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; width: 100%; max-width: 1200px;">
-            
-            <!-- Resumen del Pedido -->
-            <div class="auth-box" style="margin: 0; max-width: 100%;">
-                <h2 style="text-align: left; font-size: 2rem;">Resumen de <span class="gold-gradient">Compra</span></h2>
-                <div id="cart-items" style="margin-bottom: 2rem;">
-                    <!-- Productos inyectados por JS -->
-                    <p style="color:var(--text-secondary);">El carrito está vacío.</p>
-                </div>
-                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold;">
-                        <span>Total a Pagar:</span>
-                        <span id="cart-total" class="gold-text">$0.00</span>
-                    </div>
-                </div>
+    <div class="checkout-layout">
+        <!-- Formulario -->
+        <div class="glass-card" style="padding: 2rem;">
+            <div class="checkout-steps">
+                <div class="step active">1. Datos y Envío</div>
+                <div class="step active">2. Pago</div>
+                <div class="step">3. Confirmación</div>
             </div>
 
-            <!-- Formulario de Pago -->
-            <div class="auth-box" style="margin: 0; max-width: 100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
-                    <h2 style="text-align: left; font-size: 2rem; margin:0;">Pago <span class="gold-gradient">Seguro</span></h2>
-                    <div style="display:flex; gap:10px; color:#4CAF50;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                        <span style="font-size:0.9rem; font-weight:bold;">256-bit SSL</span>
+            <form id="checkout-form">
+                <h3 style="margin-bottom: 1.5rem;">Información de Envío</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" class="form-control" style="padding-left:1rem;" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" class="form-control" style="padding-left:1rem;" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Dirección de Envío</label>
+                    <input type="text" class="form-control" style="padding-left:1rem;" required>
+                </div>
+
+                <h3 style="margin: 2rem 0 1.5rem;">Método de Pago</h3>
+                <div class="payment-methods">
+                    <div class="payment-method active">
+                        <i class="fa-brands fa-cc-visa" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>Tarjeta</span>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fa-brands fa-cc-paypal" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>PayPal</span>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fa-solid fa-building-columns" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>Transferencia</span>
                     </div>
                 </div>
 
-                <form id="checkout-form">
+                <div class="form-group">
+                    <label>Número de Tarjeta</label>
+                    <i class="fa-regular fa-credit-card form-icon"></i>
+                    <input type="text" class="form-control" id="cc-number" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label>Nombre en la Tarjeta</label>
-                        <input type="text" required placeholder="Ej: Juan Pérez">
+                        <label>Vencimiento</label>
+                        <i class="fa-regular fa-calendar form-icon"></i>
+                        <input type="text" class="form-control" id="cc-exp" placeholder="MM/YY" maxlength="5" required>
                     </div>
                     <div class="form-group">
-                        <label>Número de Tarjeta</label>
-                        <input type="text" required placeholder="0000 0000 0000 0000" maxlength="19">
+                        <label>CVV</label>
+                        <i class="fa-solid fa-lock form-icon"></i>
+                        <input type="text" class="form-control" placeholder="123" maxlength="4" required>
                     </div>
-                    <div style="display: flex; gap: 1rem;">
-                        <div class="form-group" style="flex: 1;">
-                            <label>Vencimiento</label>
-                            <input type="text" required placeholder="MM/YY" maxlength="5">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>CVV / CVC</label>
-                            <input type="password" required placeholder="123" maxlength="4">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group" style="margin-top: 1rem; border: 1px dashed rgba(212,175,55,0.3); padding: 1rem; border-radius: 8px; background: rgba(212,175,55,0.05);">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
-                            <input type="checkbox" required style="width: auto; accent-color: var(--gold-primary);">
-                            <span style="font-size: 0.9rem;">Acepto los Términos y reconozco la política de seguridad BCP de protección de datos.</span>
-                        </label>
-                    </div>
+                </div>
 
-                    <button type="submit" class="cta-btn" style="width: 100%; margin-top: 2rem;">Confirmar y Pagar</button>
-                </form>
-            </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">
+                    <i class="fa-solid fa-check"></i> Confirmar Pedido
+                </button>
+            </form>
         </div>
-    </div>
 
-    <!-- Modal de Éxito -->
-    <div id="success-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
-        <div class="auth-box" style="text-align:center;">
-            <div style="color:#4CAF50; margin-bottom:1rem;">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        <!-- Resumen -->
+        <div class="cart-summary glass-card" style="padding: 2rem;">
+            <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-box"></i> Resumen del Pedido</h3>
+            
+            <div id="checkout-items" style="max-height: 400px; overflow-y: auto; padding-right: 10px; margin-bottom: 1.5rem;">
+                <!-- JS inserta items aquí -->
             </div>
-            <h2>Pago Exitoso</h2>
-            <p style="color:var(--text-secondary); margin-bottom:2rem;">Su transacción ha sido procesada mediante nuestra pasarela segura encriptada. Se ha generado un respaldo (backup) automático de su orden según el protocolo BCP.</p>
-            <a href="dashboard.html" class="cta-btn" style="text-decoration:none; display:inline-block;">Ir a Mis Pedidos</a>
+
+            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span id="checkout-subtotal">$0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Impuestos (19%)</span>
+                    <span id="checkout-tax">$0.00</span>
+                </div>
+                <div class="summary-row">
+                    <span>Envío</span>
+                    <span style="color:#2ed573;">Gratis</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span id="checkout-total">$0.00</span>
+                </div>
+            </div>
         </div>
     </div>
 
