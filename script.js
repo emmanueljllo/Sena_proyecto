@@ -16,6 +16,7 @@ const products = [
 ];
 
 // --- Estado Global ---
+const ADMIN_SECRET_CODE = 'CONFORTADMIN2026';
 let currentUser = JSON.parse(localStorage.getItem('confort_current_user')) || null;
 let userCartKey = currentUser ? `confort_cart_${currentUser.email}` : 'confort_cart_guest';
 let userWishlistKey = currentUser ? `confort_wishlist_${currentUser.email}` : 'confort_wishlist_guest';
@@ -114,6 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initCheckoutPage();
     initDashboardPage();
     initAuthPages();
+
+    // Forgot password link
+    const forgotLink = document.getElementById('forgot-password-link');
+    if (forgotLink) forgotLink.addEventListener('click', (e) => { e.preventDefault(); openForgotModal(); });
+
+    // Modal close on backdrop click
+    const forgotModal = document.getElementById('forgot-modal');
+    if (forgotModal) forgotModal.addEventListener('click', (e) => { if (e.target === forgotModal) closeForgotModal(); });
 });
 
 window.logout = (e) => {
@@ -121,6 +130,43 @@ window.logout = (e) => {
     localStorage.removeItem('confort_current_user');
     localStorage.removeItem('confort_user_logged_in');
     window.location.href = 'index.html';
+};
+
+// --- Forgot Password (Modal) ---
+window.verifyForgotEmail = () => {
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) { showToast('Ingresa un correo válido', 'error'); return; }
+    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+    const user = users.find(u => u.email === email);
+    if (!user) { showToast('No existe una cuenta con ese correo', 'error'); return; }
+    document.getElementById('forgot-step-1').style.display = 'none';
+    document.getElementById('forgot-step-2').style.display = 'block';
+};
+
+window.resetPassword = () => {
+    const email = document.getElementById('forgot-email').value.trim();
+    const newPass = document.getElementById('forgot-new-password').value;
+    const confirm = document.getElementById('forgot-confirm-password').value;
+    if (newPass.length < 8) { showToast('La contraseña debe tener al menos 8 caracteres', 'error'); return; }
+    if (newPass !== confirm) { showToast('Las contraseñas no coinciden', 'error'); return; }
+    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+    const idx = users.findIndex(u => u.email === email);
+    if (idx === -1) { showToast('Error al actualizar', 'error'); return; }
+    users[idx].password = newPass;
+    localStorage.setItem('confort_users', JSON.stringify(users));
+    showToast('¡Contraseña actualizada! Inicia sesión.');
+    closeForgotModal();
+};
+
+window.closeForgotModal = () => {
+    document.getElementById('forgot-modal').style.display = 'none';
+    document.getElementById('forgot-step-1').style.display = 'block';
+    document.getElementById('forgot-step-2').style.display = 'none';
+    document.getElementById('forgot-email').value = '';
+};
+
+const openForgotModal = () => {
+    document.getElementById('forgot-modal').style.display = 'flex';
 };
 
 // --- Funciones de Carrito y Wishlist ---
@@ -172,6 +218,7 @@ const toggleWishlist = (productId) => {
     localStorage.setItem(userWishlistKey, JSON.stringify(wishlist));
     updateWishlistCount();
     renderProducts(); // Re-renderizar para actualizar el estado del botón
+    if (typeof renderDashboardWishlist === 'function') renderDashboardWishlist();
 };
 
 // --- Lógica de la Página de Inicio (Index) ---
@@ -260,6 +307,47 @@ const renderProducts = (search = '', category = 'all') => {
             </div>
         `;
         productsGrid.appendChild(card);
+    });
+};
+
+const renderDashboardWishlist = () => {
+    const grid = document.getElementById('dashboard-wishlist-grid');
+    const empty = document.getElementById('dashboard-no-wishlist');
+    if (!grid || !empty) return;
+
+    const wishedItems = products.filter(p => wishlist.includes(p.id));
+    grid.innerHTML = '';
+
+    if (wishedItems.length === 0) {
+        empty.style.display = 'block';
+        return;
+    }
+
+    empty.style.display = 'none';
+    wishedItems.forEach((p, index) => {
+        const delay = (index % 4) * 0.1;
+        const card = document.createElement('div');
+        card.className = 'glass-card product-card animate-fade-up';
+        card.style.animationDelay = `${delay}s`;
+        card.innerHTML = `
+            <button class="wishlist-btn active" onclick="toggleWishlist(${p.id})">
+                <i class="fa-solid fa-heart"></i>
+            </button>
+            <img src="${p.image}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+                <span class="product-category">${p.category}</span>
+                <h3 class="product-title">${p.name}</h3>
+                <div class="product-price-row">
+                    <div>
+                        <span class="product-price">${formatPrice(p.price)}</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary add-to-cart-btn" onclick="addToCart(${p.id})">
+                    <i class="fa-solid fa-cart-plus"></i> Añadir al carrito
+                </button>
+            </div>
+        `;
+        grid.appendChild(card);
     });
 };
 
@@ -415,9 +503,22 @@ const initDashboardPage = () => {
     if (!document.querySelector('.dashboard-main')) return;
 
     if (currentUser) {
+        // Rellenar info del sidebar
         document.getElementById('user-name-display').textContent = currentUser.username || currentUser.email;
         document.getElementById('user-email-display').textContent = currentUser.email;
         document.getElementById('avatar-initial').textContent = (currentUser.username || currentUser.email).charAt(0).toUpperCase();
+
+        // Rellenar form de configuración
+        const settingsUsername = document.querySelector('#tab-settings input[type="text"]');
+        const settingsEmail = document.querySelector('#tab-settings input[type="email"]');
+        if (settingsUsername) settingsUsername.value = currentUser.username || '';
+        if (settingsEmail) settingsEmail.value = currentUser.email || '';
+
+        // Mostrar panel admin si corresponde
+        if (currentUser.role === 'admin') {
+            const adminLink = document.getElementById('admin-link');
+            if (adminLink) adminLink.style.display = 'flex';
+        }
     }
 
     // Tabs
@@ -429,9 +530,9 @@ const initDashboardPage = () => {
             e.preventDefault();
             links.forEach(l => l.classList.remove('active'));
             tabs.forEach(t => t.classList.remove('active'));
-            
             link.classList.add('active');
-            document.getElementById(link.dataset.tab).classList.add('active');
+            const targetTab = document.getElementById(link.dataset.tab);
+            if (targetTab) targetTab.classList.add('active');
         });
     });
 
@@ -448,24 +549,112 @@ const initDashboardPage = () => {
 
         // Orders Table
         const tbody = document.getElementById('orders-tbody');
-        if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No tienes pedidos recientes.</td></tr>';
-        } else {
-            orders.forEach(order => {
-                const tr = document.createElement('tr');
-                const statusClass = order.status === 'Procesando' ? 'status-processing' : 
-                                    order.status === 'Enviado' ? 'status-shipped' : 'status-delivered';
-                
-                tr.innerHTML = `
-                    <td><strong>${order.id}</strong></td>
-                    <td>${new Date(order.date).toLocaleDateString()}</td>
-                    <td>${formatPrice(order.total)}</td>
-                    <td><span class="status-badge ${statusClass}">${order.status}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
+        if (tbody) {
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:2rem;">No tienes pedidos recientes. <a href="index.html#catalogo" style="color:var(--gold-primary);">Ir al catálogo</a></td></tr>';
+            } else {
+                orders.forEach(order => {
+                    const tr = document.createElement('tr');
+                    const statusClass = order.status === 'Procesando' ? 'status-processing' : 
+                                        order.status === 'Enviado' ? 'status-shipped' : 'status-delivered';
+                    tr.innerHTML = `
+                        <td><strong>${order.id}</strong></td>
+                        <td>${new Date(order.date).toLocaleDateString()}</td>
+                        <td>${formatPrice(order.total)}</td>
+                        <td><span class="status-badge ${statusClass}">${order.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Wishlist Grid
+        renderDashboardWishlist();
+
+        // Admin panel
+        if (currentUser.role === 'admin') {
+            renderAdminPanel();
         }
     }
+};
+
+const renderDashboardWishlist = () => {
+    const grid = document.getElementById('wishlist-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    if (wishlist.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:var(--text-secondary); padding:3rem;">
+            <i class="fa-regular fa-heart" style="font-size:3rem; display:block; margin-bottom:1rem; color:var(--gold-primary);"></i>
+            No tienes productos en tu lista de deseos.<br><br>
+            <a href="index.html#catalogo" class="btn btn-outline">Explorar Catálogo</a>
+        </div>`;
+        return;
+    }
+    const wishedProducts = products.filter(p => wishlist.includes(p.id));
+    wishedProducts.forEach((p, index) => {
+        const delay = index * 0.08;
+        const oldPriceHtml = p.oldPrice ? `<span class="product-price-old">${formatPrice(p.oldPrice)}</span>` : '';
+        const card = document.createElement('div');
+        card.className = 'glass-card product-card animate-fade-up';
+        card.style.animationDelay = `${delay}s`;
+        card.innerHTML = `
+            <button class="wishlist-btn active" onclick="removeFromWishlistDashboard(${p.id})">
+                <i class="fa-solid fa-heart"></i>
+            </button>
+            <img src="${p.image}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+                <span class="product-category">${p.category}</span>
+                <h3 class="product-title">${p.name}</h3>
+                <div class="product-price-row">
+                    <span class="product-price">${formatPrice(p.price)}</span>
+                    ${oldPriceHtml}
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:0.8rem;">
+                    <button class="btn btn-primary" style="flex:1; font-size:0.85rem;" onclick="addToCart(${p.id})">
+                        <i class="fa-solid fa-cart-plus"></i> Añadir
+                    </button>
+                    <button class="btn btn-outline" style="font-size:0.85rem;" onclick="removeFromWishlistDashboard(${p.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+};
+
+window.removeFromWishlistDashboard = (id) => {
+    const idx = wishlist.indexOf(id);
+    if (idx > -1) wishlist.splice(idx, 1);
+    localStorage.setItem(userWishlistKey, JSON.stringify(wishlist));
+    updateWishlistCount();
+    document.getElementById('stat-wishlist').textContent = wishlist.length;
+    renderDashboardWishlist();
+    showToast('Eliminado de la lista de deseos', 'info');
+};
+
+const renderAdminPanel = () => {
+    const tbody = document.getElementById('admin-users-tbody');
+    if (!tbody) return;
+    const allUsers = JSON.parse(localStorage.getItem('confort_users')) || [];
+    if (allUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">No hay usuarios registrados.</td></tr>';
+        return;
+    }
+    allUsers.forEach(u => {
+        const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+        const tr = document.createElement('tr');
+        const roleHtml = u.role === 'admin'
+            ? '<span class="status-badge" style="background:rgba(212,175,55,0.15); color:var(--gold-primary);"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
+            : '<span class="status-badge status-processing"><i class="fa-regular fa-user"></i> Cliente</span>';
+        tr.innerHTML = `
+            <td><strong>${u.username || 'N/A'}</strong></td>
+            <td>${u.email}</td>
+            <td>${roleHtml}</td>
+            <td>${userOrders.length} pedido(s)</td>
+        `;
+        tbody.appendChild(tr);
+    });
 };
 
 // --- Auth Forms Validation ---
@@ -493,6 +682,15 @@ const initAuthPages = () => {
 
     // Register Form
     const registerForm = document.getElementById('register-form');
+    const roleSelect = document.getElementById('role');
+    const adminCodeGroup = document.getElementById('admin-code-group');
+
+    if (roleSelect && adminCodeGroup) {
+        roleSelect.addEventListener('change', (e) => {
+            adminCodeGroup.style.display = e.target.value === 'admin' ? 'block' : 'none';
+        });
+    }
+
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -500,6 +698,7 @@ const initAuthPages = () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const confirm = document.getElementById('confirm-password').value;
+            const adminCode = document.getElementById('admin-code') ? document.getElementById('admin-code').value : '';
 
             if (password !== confirm) {
                 showToast('Las contraseñas no coinciden', 'error');
@@ -512,7 +711,9 @@ const initAuthPages = () => {
                 return;
             }
 
-            users.push({ username, email, password });
+            // Asignar rol: admin si el email contiene 'admin', sino cliente
+            const role = email.toLowerCase().includes('admin') || adminCode === ADMIN_SECRET_CODE ? 'admin' : 'cliente';
+            users.push({ username, email, password, role });
             localStorage.setItem('confort_users', JSON.stringify(users));
             showToast('Registro exitoso. Inicia sesión.');
             setTimeout(() => window.location.href = 'login.html', 1500);
@@ -531,13 +732,32 @@ const initAuthPages = () => {
             const user = users.find(u => u.email === email && u.password === password);
             
             if (user) {
-                localStorage.setItem('confort_current_user', JSON.stringify({ email: user.email, username: user.username }));
+                localStorage.setItem('confort_current_user', JSON.stringify({ email: user.email, username: user.username, role: user.role || 'cliente' }));
                 localStorage.setItem('confort_user_logged_in', 'true');
                 showToast('Inicio de sesión exitoso');
-                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
             } else {
                 showToast('Credenciales incorrectas', 'error');
             }
+        });
+    }
+
+    const forgotLink = document.getElementById('forgot-password-link');
+    if (forgotLink) {
+        forgotLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const email = prompt('Ingresa tu correo electrónico para recuperar tu contraseña:');
+            if (!email) return;
+
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                showToast('No se encontró ninguna cuenta con ese correo', 'error');
+                return;
+            }
+            showToast('Revisa tu bandeja de entrada. Se ha enviado un enlace de recuperación.', 'success');
         });
     }
 

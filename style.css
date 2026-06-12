@@ -477,6 +477,19 @@ a {
 .badge-new { background: var(--text-primary); color: #000; }
 .badge-sale { background: #ff4757; color: #fff; }
 
+.user-role-badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(212, 175, 55, 0.12);
+    color: var(--gold-primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .wishlist-btn {
     position: absolute;
     top: 1.5rem;
@@ -763,6 +776,40 @@ a {
     color: var(--gold-primary);
     font-weight: 600;
 }
+
+/* Modal (Forgot Password, etc.) */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.modal-box {
+    width: 100%;
+    max-width: 440px;
+    padding: 2.5rem;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.modal-close:hover { color: var(--gold-primary); }
 
 /* Dashboard */
 .dashboard-layout {

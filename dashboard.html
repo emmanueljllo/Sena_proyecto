@@ -52,6 +52,7 @@
                 <div class="user-info">
                     <h3 id="user-name-display">Usuario</h3>
                     <p id="user-email-display">usuario@email.com</p>
+                    <span class="user-role-badge" id="user-role-display">Cliente</span>
                 </div>
             </div>
 
@@ -67,6 +68,10 @@
                 </a>
                 <a href="#" class="sidebar-link" data-tab="tab-settings">
                     <i class="fa-solid fa-gear"></i> Configuración
+                </a>
+                <!-- Solo visible para admin -->
+                <a href="#" class="sidebar-link" data-tab="tab-admin" id="admin-link" style="display:none; color:var(--gold-primary);">
+                    <i class="fa-solid fa-shield-halved"></i> Panel Admin
                 </a>
                 <a href="#" class="sidebar-link" onclick="logout(event)" style="margin-top: 1rem; color: #ff4757;">
                     <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
@@ -130,14 +135,9 @@
             <div id="tab-wishlist" class="tab-content">
                 <div class="dashboard-header">
                     <h2>Tu Lista de <span class="gold-text">Deseos</span></h2>
-                    <p>Tus productos favoritos guardados para más tarde.</p>
+                    <p style="color:var(--text-secondary);">Tus productos favoritos guardados.</p>
                 </div>
-                <!-- Reutilizando la grilla de productos pero filtrada -->
-                <div style="color:var(--text-secondary);">
-                    <em>(La lista de deseos se renderiza en el catálogo principal en el inicio, o aquí en futuras actualizaciones.)</em>
-                    <br><br>
-                    <a href="index.html#catalogo" class="btn btn-outline">Ir al Catálogo</a>
-                </div>
+                <div class="products-container" id="wishlist-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
             </div>
 
             <!-- Tab: Settings -->
@@ -166,6 +166,31 @@
                             Guardar Cambios
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Tab: Admin -->
+            <div id="tab-admin" class="tab-content">
+                <div class="dashboard-header">
+                    <h2>Panel de <span class="gold-text">Administrador</span></h2>
+                    <p style="color:var(--text-secondary);">Gestión de usuarios registrados en la plataforma.</p>
+                </div>
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Pedidos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody">
+                                <!-- Injectado por JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>

@@ -49,6 +49,18 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Tipo de Usuario</label>
+                    <select id="role" class="form-control" style="padding-left:1rem;">
+                        <option value="cliente" selected>Cliente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group" id="admin-code-group" style="display:none;">
+                    <label>Código Admin</label>
+                    <i class="fa-solid fa-key form-icon"></i>
+                    <input type="text" id="admin-code" class="form-control" placeholder="Ingresa el código secreto">
+                </div>
+                <div class="form-group">
                     <label>Confirmar Contraseña</label>
                     <i class="fa-solid fa-shield-check form-icon"></i>
                     <input type="password" id="confirm-password" class="form-control" placeholder="Repite tu contraseña" required minlength="8">
