@@ -310,46 +310,7 @@ const renderProducts = (search = '', category = 'all') => {
     });
 };
 
-const renderDashboardWishlist = () => {
-    const grid = document.getElementById('dashboard-wishlist-grid');
-    const empty = document.getElementById('dashboard-no-wishlist');
-    if (!grid || !empty) return;
 
-    const wishedItems = products.filter(p => wishlist.includes(p.id));
-    grid.innerHTML = '';
-
-    if (wishedItems.length === 0) {
-        empty.style.display = 'block';
-        return;
-    }
-
-    empty.style.display = 'none';
-    wishedItems.forEach((p, index) => {
-        const delay = (index % 4) * 0.1;
-        const card = document.createElement('div');
-        card.className = 'glass-card product-card animate-fade-up';
-        card.style.animationDelay = `${delay}s`;
-        card.innerHTML = `
-            <button class="wishlist-btn active" onclick="toggleWishlist(${p.id})">
-                <i class="fa-solid fa-heart"></i>
-            </button>
-            <img src="${p.image}" alt="${p.name}" class="product-image">
-            <div class="product-info">
-                <span class="product-category">${p.category}</span>
-                <h3 class="product-title">${p.name}</h3>
-                <div class="product-price-row">
-                    <div>
-                        <span class="product-price">${formatPrice(p.price)}</span>
-                    </div>
-                </div>
-                <button class="btn btn-primary add-to-cart-btn" onclick="addToCart(${p.id})">
-                    <i class="fa-solid fa-cart-plus"></i> Añadir al carrito
-                </button>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
-};
 
 // --- Lógica de Checkout ---
 const initCheckoutPage = () => {
