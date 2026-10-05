@@ -3,16 +3,16 @@ const products = [
     { id: 1, name: "ConfortBook Pro X", price: 1499.00, oldPrice: 1699.00, category: "Computadores", rating: 4.9, reviews: 128, image: "assets/premium_laptop_1778531221300.png", badge: "new" },
     { id: 2, name: "Chrono Elite Gold", price: 399.00, oldPrice: null, category: "Accesorios", rating: 4.8, reviews: 85, image: "assets/premium_smartwatch_1778531397408.png", badge: null },
     { id: 3, name: "Aura Sound Max", price: 299.00, oldPrice: 349.00, category: "Audio", rating: 4.7, reviews: 210, image: "assets/premium_headphones_1778531409537.png", badge: "sale" },
-    { id: 4, name: "Monitor Vision 4K", price: 450.00, oldPrice: null, category: "Computadores", rating: 4.6, reviews: 54, image: "https://picsum.photos/seed/monitor/500/500", badge: null },
-    { id: 5, name: "Teclado Titan RGB", price: 120.00, oldPrice: 150.00, category: "Accesorios", rating: 4.8, reviews: 320, image: "https://picsum.photos/seed/keyboard/500/500", badge: "sale" },
-    { id: 6, name: "Ratón Viper Pro", price: 85.00, oldPrice: null, category: "Accesorios", rating: 4.5, reviews: 112, image: "https://picsum.photos/seed/mouse/500/500", badge: null },
-    { id: 7, name: "Silla Ergonomic Plus", price: 320.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 89, image: "https://picsum.photos/seed/chair/500/500", badge: null },
-    { id: 8, name: "Cámara Stream 4K", price: 150.00, oldPrice: null, category: "Accesorios", rating: 4.4, reviews: 67, image: "https://picsum.photos/seed/webcam/500/500", badge: null },
+    { id: 4, name: "Monitor Vision 4K", price: 450.00, oldPrice: null, category: "Computadores", rating: 4.6, reviews: 54, image: "assets/premium_monitor.jpg", badge: null },
+    { id: 5, name: "Teclado Titan RGB", price: 120.00, oldPrice: 150.00, category: "Accesorios", rating: 4.8, reviews: 320, image: "assets/premium_keyboard.jpg", badge: "sale" },
+    { id: 6, name: "Ratón Viper Pro", price: 85.00, oldPrice: null, category: "Accesorios", rating: 4.5, reviews: 112, image: "assets/premium_mouse.jpg", badge: null },
+    { id: 7, name: "Silla Ergonomic Plus", price: 320.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 89, image: "assets/premium_chair.jpg", badge: null },
+    { id: 8, name: "Cámara Stream 4K", price: 150.00, oldPrice: null, category: "Accesorios", rating: 4.4, reviews: 67, image: "assets/premium_camera.jpg", badge: null },
     { id: 9, name: "Micro Studio Voice", price: 190.00, oldPrice: 220.00, category: "Audio", rating: 4.9, reviews: 145, image: "https://picsum.photos/seed/mic/500/500", badge: "sale" },
-    { id: 10, name: "Gafas Reality Max", price: 599.00, oldPrice: null, category: "Drones", rating: 4.6, reviews: 34, image: "https://picsum.photos/seed/vr/500/500", badge: "new" },
-    { id: 11, name: "Drone SkyEye Pro", price: 899.00, oldPrice: 999.00, category: "Drones", rating: 4.8, reviews: 42, image: "https://picsum.photos/seed/drone/500/500", badge: "sale" },
-    { id: 12, name: "Tablet ArtPad 12\"", price: 250.00, oldPrice: null, category: "Computadores", rating: 4.5, reviews: 76, image: "https://picsum.photos/seed/tablet/500/500", badge: null },
-    { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "https://picsum.photos/seed/speaker/500/500", badge: null }
+    { id: 10, name: "Gafas Reality Max", price: 599.00, oldPrice: null, category: "Drones", rating: 4.6, reviews: 34, image: "assets/premium_glasses.jpg", badge: "new" },
+    { id: 11, name: "Drone SkyEye Pro", price: 899.00, oldPrice: 999.00, category: "Drones", rating: 4.8, reviews: 42, image: "assets/premium_drone.jpg", badge: "sale" },
+    { id: 12, name: "Tablet ArtPad 12\"", price: 250.00, oldPrice: null, category: "Computadores", rating: 4.5, reviews: 76, image: "assets/premium_tablet.jpg", badge: null },
+    { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "assets/premium_speaker.jpg", badge: null }
 ];
 
 // --- Estado Global ---
