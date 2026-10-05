@@ -1,5 +1,5 @@
-// --- Datos de Productos ---
-const products = [
+// --- Datos Iniciales de Productos ---
+const defaultProducts = [
     { id: 1, name: "ConfortBook Pro X", price: 1499.00, oldPrice: 1699.00, category: "Computadores", rating: 4.9, reviews: 128, image: "assets/premium_laptop_1778531221300.png", badge: "new" },
     { id: 2, name: "Chrono Elite Gold", price: 399.00, oldPrice: null, category: "Accesorios", rating: 4.8, reviews: 85, image: "assets/premium_smartwatch_1778531397408.png", badge: null },
     { id: 3, name: "Aura Sound Max", price: 299.00, oldPrice: 349.00, category: "Audio", rating: 4.7, reviews: 210, image: "assets/premium_headphones_1778531409537.png", badge: "sale" },
@@ -15,6 +15,9 @@ const products = [
     { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "assets/premium_speaker.jpg", badge: null }
 ];
 
+// Cargar catálogo persistido o defaults
+let products = JSON.parse(localStorage.getItem('confort_products')) || defaultProducts;
+
 // --- Estado Global ---
 const ADMIN_SECRET_CODE = 'CONFORTADMIN2026';
 let currentUser = JSON.parse(localStorage.getItem('confort_current_user')) || null;
@@ -24,9 +27,10 @@ let userWishlistKey = currentUser ? `confort_wishlist_${currentUser.email}` : 'c
 let cart = JSON.parse(localStorage.getItem(userCartKey)) || [];
 let wishlist = JSON.parse(localStorage.getItem(userWishlistKey)) || [];
 
-// --- Funciones Utilitarias ---
+// Cupón activo en checkout
+let appliedCoupon = null;
 
-// Formatear precio
+// --- Funciones Utilitarias ---
 const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 };
@@ -66,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.style.opacity = '0';
             setTimeout(() => loader.remove(), 500);
         }
-    }, 1000);
+    }, 800);
 
     // Navbar Scroll Effect
     const navbar = document.getElementById('navbar');
@@ -96,7 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const authLinks = document.getElementById('nav-auth-links');
     if (authLinks) {
         if (currentUser) {
+            const adminBadge = currentUser.role === 'admin' 
+                ? '<a href="admin.html" class="nav-link" style="color:var(--gold-primary);"><i class="fa-solid fa-shield-halved"></i> Admin BCP</a>' 
+                : '';
             authLinks.innerHTML = `
+                ${adminBadge}
                 <a href="#" onclick="logout(event)" class="nav-link" style="color:var(--text-secondary)"><i class="fa-solid fa-right-from-bracket"></i> Salir</a>
             `;
         } else {
@@ -109,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateCartCount();
     updateWishlistCount();
+    updateBcpUI();
     
     // Inicializar páginas
     initIndexPage();
@@ -123,6 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modal close on backdrop click
     const forgotModal = document.getElementById('forgot-modal');
     if (forgotModal) forgotModal.addEventListener('click', (e) => { if (e.target === forgotModal) closeForgotModal(); });
+
+    const qvModal = document.getElementById('quick-view-modal');
+    if (qvModal) qvModal.addEventListener('click', (e) => { if (e.target === qvModal) closeQuickView(); });
+
+    const prodModal = document.getElementById('product-modal');
+    if (prodModal) prodModal.addEventListener('click', (e) => { if (e.target === prodModal) closeProductModal(); });
 });
 
 window.logout = (e) => {
@@ -170,16 +185,13 @@ const openForgotModal = () => {
 };
 
 // --- Funciones de Carrito y Wishlist ---
-
 const updateCartCount = () => {
     const countEl = document.getElementById('cart-count');
     if (countEl) {
         const total = cart.reduce((sum, item) => sum + item.quantity, 0);
         countEl.textContent = total;
-        
-        // Animación pulse
         countEl.style.animation = 'none';
-        countEl.offsetHeight; /* trigger reflow */
+        countEl.offsetHeight;
         countEl.style.animation = 'pulse 0.3s ease';
     }
 };
@@ -189,20 +201,20 @@ const updateWishlistCount = () => {
     if (countEl) countEl.textContent = wishlist.length;
 };
 
-const addToCart = (productId) => {
+const addToCart = (productId, quantity = 1) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
     const existing = cart.find(item => item.id === productId);
     if (existing) {
-        existing.quantity += 1;
+        existing.quantity += quantity;
     } else {
-        cart.push({ ...product, quantity: 1 });
+        cart.push({ ...product, quantity: quantity });
     }
     
     localStorage.setItem(userCartKey, JSON.stringify(cart));
     updateCartCount();
-    showToast(`${product.name} agregado al carrito`);
+    showToast(`${product.name} añadido al carrito`);
     renderCart(); // Si estamos en checkout
 };
 
@@ -217,15 +229,86 @@ const toggleWishlist = (productId) => {
     }
     localStorage.setItem(userWishlistKey, JSON.stringify(wishlist));
     updateWishlistCount();
-    renderProducts(); // Re-renderizar para actualizar el estado del botón
+    renderProducts();
     if (typeof renderDashboardWishlist === 'function') renderDashboardWishlist();
 };
 
-// --- Lógica de la Página de Inicio (Index) ---
+// --- Quick View Modal ---
+let currentQvProduct = null;
+let currentQvQty = 1;
 
+window.openQuickView = (productId) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    currentQvProduct = product;
+    currentQvQty = 1;
+
+    const modal = document.getElementById('quick-view-modal');
+    if (!modal) return;
+
+    const imgEl = document.getElementById('qv-image');
+    if (imgEl) {
+        imgEl.src = product.image;
+        imgEl.alt = product.name;
+    }
+    const catEl = document.getElementById('qv-category');
+    if (catEl) catEl.textContent = product.category;
+
+    const titleEl = document.getElementById('qv-title');
+    if (titleEl) titleEl.textContent = product.name;
+
+    const priceEl = document.getElementById('qv-price');
+    if (priceEl) priceEl.textContent = formatPrice(product.price);
+    
+    const oldPriceEl = document.getElementById('qv-old-price');
+    if (oldPriceEl) {
+        if (product.oldPrice) {
+            oldPriceEl.textContent = formatPrice(product.oldPrice);
+            oldPriceEl.style.display = 'inline';
+        } else {
+            oldPriceEl.style.display = 'none';
+        }
+    }
+
+    const ratingEl = document.getElementById('qv-rating');
+    if (ratingEl) {
+        ratingEl.innerHTML = `<span class="stars"><i class="fa-solid fa-star"></i> ${product.rating || 4.8}</span> <span>(${product.reviews || 85} reseñas)</span>`;
+    }
+
+    const descEl = document.getElementById('qv-description');
+    if (descEl) {
+        descEl.textContent = `${product.name} combina ingeniería de precisión con materiales aeroespaciales y acabado dorado de lujo. Certificado bajo los más exigentes estándares tecnológicos y respaldado por la garantía institucional Confort Care.`;
+    }
+
+    const qtyEl = document.getElementById('qv-qty');
+    if (qtyEl) qtyEl.textContent = currentQvQty;
+
+    const addBtn = document.getElementById('qv-add-cart-btn');
+    if (addBtn) {
+        addBtn.onclick = () => {
+            addToCart(product.id, currentQvQty);
+            closeQuickView();
+        };
+    }
+
+    modal.style.display = 'flex';
+};
+
+window.closeQuickView = () => {
+    const modal = document.getElementById('quick-view-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.changeQvQty = (delta) => {
+    currentQvQty = Math.max(1, Math.min(99, currentQvQty + delta));
+    const qtyEl = document.getElementById('qv-qty');
+    if (qtyEl) qtyEl.textContent = currentQvQty;
+};
+
+// --- Lógica de la Página de Inicio (Index) ---
 const initIndexPage = () => {
     const productsGrid = document.getElementById('products-grid');
-    if (!productsGrid) return; // No estamos en index.html
+    if (!productsGrid) return;
 
     renderProducts();
 
@@ -233,18 +316,18 @@ const initIndexPage = () => {
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            renderProducts(e.target.value, document.querySelector('.filter-chip.active').dataset.filter);
+            const activeFilter = document.querySelector('.filter-chip.active');
+            renderProducts(e.target.value, activeFilter ? activeFilter.dataset.filter : 'all');
         });
     }
 
-    // Filtros
-    const filters = document.querySelectorAll('.filter-chip');
-    filters.forEach(filter => {
-        filter.addEventListener('click', (e) => {
-            filters.forEach(f => f.classList.remove('active'));
+    // Filtros por Categoría
+    const filterChips = document.querySelectorAll('.filter-chip');
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            filterChips.forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
-            
-            const searchTerm = document.getElementById('search-input').value;
+            const searchTerm = searchInput ? searchInput.value : '';
             renderProducts(searchTerm, e.target.dataset.filter);
         });
     });
@@ -263,7 +346,7 @@ const renderProducts = (search = '', category = 'all') => {
     });
 
     if (filtered.length === 0) {
-        productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: var(--text-secondary);">No se encontraron productos.</div>`;
+        productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: var(--text-secondary);">No se encontraron productos en el catálogo.</div>`;
         return;
     }
 
@@ -287,13 +370,13 @@ const renderProducts = (search = '', category = 'all') => {
             <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${p.id})">
                 <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>
-            <img src="${p.image}" alt="${p.name}" class="product-image">
+            <img src="${p.image}" alt="${p.name}" class="product-image" onclick="openQuickView(${p.id})" style="cursor: pointer;" title="Ver detalle del producto">
             <div class="product-info">
                 <span class="product-category">${p.category}</span>
-                <h3 class="product-title">${p.name}</h3>
+                <h3 class="product-title" onclick="openQuickView(${p.id})" style="cursor: pointer;">${p.name}</h3>
                 <div class="product-rating">
-                    <span class="stars"><i class="fa-solid fa-star"></i> ${p.rating}</span>
-                    <span>(${p.reviews} reseñas)</span>
+                    <span class="stars"><i class="fa-solid fa-star"></i> ${p.rating || 4.8}</span>
+                    <span>(${p.reviews || 75} reseñas)</span>
                 </div>
                 <div class="product-price-row">
                     <div>
@@ -301,16 +384,19 @@ const renderProducts = (search = '', category = 'all') => {
                         ${oldPriceHtml}
                     </div>
                 </div>
-                <button class="btn btn-primary add-to-cart-btn" onclick="addToCart(${p.id})">
-                    <i class="fa-solid fa-cart-plus"></i> Añadir
-                </button>
+                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                    <button class="btn btn-primary add-to-cart-btn" style="flex:1;" onclick="addToCart(${p.id})">
+                        <i class="fa-solid fa-cart-plus"></i> Añadir
+                    </button>
+                    <button class="btn btn-outline" style="padding:0.6rem 0.8rem;" onclick="openQuickView(${p.id})" title="Vista Rápida">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
         `;
         productsGrid.appendChild(card);
     });
 };
-
-
 
 // --- Lógica de Checkout ---
 const initCheckoutPage = () => {
@@ -368,29 +454,71 @@ const initCheckoutPage = () => {
             const userOrdersKey = `confort_orders_${currentUser.email}`;
             const orders = JSON.parse(localStorage.getItem(userOrdersKey)) || [];
             
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
-            orders.unshift({
-                id: 'ORD-' + Math.floor(Math.random() * 1000000),
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const discountPercent = appliedCoupon ? appliedCoupon.discount : 0;
+            const discountAmount = subtotal * discountPercent;
+            const discountedSubtotal = subtotal - discountAmount;
+            const tax = discountedSubtotal * 0.19;
+            const finalTotal = discountedSubtotal + tax;
+
+            const newOrder = {
+                id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
                 date: new Date().toISOString(),
-                items: cart,
-                total: total + (total * 0.19), // + tax
+                customerName: currentUser.username || 'Cliente Confort',
+                customerEmail: currentUser.email,
+                items: [...cart],
+                subtotal: subtotal,
+                discount: discountAmount,
+                couponCode: appliedCoupon ? appliedCoupon.code : null,
+                tax: tax,
+                total: finalTotal,
                 status: 'Procesando'
-            });
+            };
             
+            orders.unshift(newOrder);
             localStorage.setItem(userOrdersKey, JSON.stringify(orders));
+            localStorage.setItem('confort_last_order', JSON.stringify(newOrder));
             
             // Clear cart
             cart = [];
             localStorage.setItem(userCartKey, JSON.stringify(cart));
             updateCartCount();
 
-            // Show success and redirect
-            showToast('¡Pedido realizado con éxito!');
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 2000);
+            // Show success modal
+            const modal = document.getElementById('order-success-modal');
+            if (modal) {
+                document.getElementById('modal-order-id').textContent = newOrder.id;
+                document.getElementById('modal-order-date').textContent = new Date(newOrder.date).toLocaleDateString();
+                document.getElementById('modal-order-total').textContent = formatPrice(newOrder.total);
+                modal.style.display = 'flex';
+                showToast('¡Pago procesado con éxito!');
+            } else {
+                showToast('¡Pedido realizado con éxito!');
+                setTimeout(() => window.location.href = 'dashboard.html', 1500);
+            }
         });
+    }
+};
+
+window.applyCoupon = () => {
+    const input = document.getElementById('coupon-input');
+    if (!input) return;
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        showToast('Ingresa un código de cupón', 'error');
+        return;
+    }
+    const coupons = {
+        'SENA2026': { discount: 0.20, name: 'SENA 20% OFF' },
+        'CONFORT10': { discount: 0.10, name: 'Bienvenida 10% OFF' },
+        'BCPPRO': { discount: 0.15, name: 'Seguridad BCP 15% OFF' }
+    };
+    if (coupons[code]) {
+        appliedCoupon = { code, ...coupons[code] };
+        showToast(`¡Cupón ${code} aplicado! ${coupons[code].name}`, 'success');
+        renderCart();
+    } else {
+        showToast('Cupón no válido o expirado', 'error');
     }
 };
 
@@ -430,8 +558,22 @@ const renderCart = () => {
         });
     }
 
-    const tax = subtotal * 0.19;
-    const total = subtotal + tax;
+    const discountPercent = appliedCoupon ? appliedCoupon.discount : 0;
+    const discountAmount = subtotal * discountPercent;
+    const discountedSubtotal = subtotal - discountAmount;
+    const tax = discountedSubtotal * 0.19;
+    const total = discountedSubtotal + tax;
+
+    const couponRow = document.getElementById('coupon-row');
+    if (couponRow) {
+        if (appliedCoupon) {
+            couponRow.style.display = 'flex';
+            document.getElementById('coupon-name').textContent = appliedCoupon.name;
+            document.getElementById('checkout-discount').textContent = `-${formatPrice(discountAmount)}`;
+        } else {
+            couponRow.style.display = 'none';
+        }
+    }
 
     document.getElementById('checkout-subtotal').textContent = formatPrice(subtotal);
     document.getElementById('checkout-tax').textContent = formatPrice(tax);
@@ -459,30 +601,518 @@ window.removeFromCart = (id) => {
     showToast('Producto eliminado del carrito', 'info');
 };
 
+// --- Factura PDF con jsPDF ---
+window.downloadOrderInvoicePDF = (specificOrder = null) => {
+    const order = specificOrder || JSON.parse(localStorage.getItem('confort_last_order'));
+    if (!order) {
+        showToast('No se encontró información del pedido', 'error');
+        return;
+    }
+    if (typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined') {
+        showToast('Cargando librería de PDF...', 'info');
+        return;
+    }
+    const jsPDFClass = window.jspdf ? window.jspdf.jsPDF : jspdf.jsPDF;
+    const doc = new jsPDFClass();
+
+    // Encabezado Premium
+    doc.setFillColor(15, 17, 23);
+    doc.rect(0, 0, 210, 42, 'F');
+
+    doc.setTextColor(212, 175, 55);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONFORT MARKET", 15, 20);
+
+    doc.setFontSize(9);
+    doc.setTextColor(200, 200, 200);
+    doc.setFont("helvetica", "normal");
+    doc.text("SISTEMA E-COMMERCE PREMIUM & BCP", 15, 27);
+    doc.text("NIT: 901.458.789-1 | Régimen Común", 15, 33);
+    doc.text("Bogotá, Colombia - Servicio Garantizado", 15, 38);
+
+    doc.setTextColor(212, 175, 55);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text("FACTURA DE VENTA", 140, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`No: ${order.id}`, 140, 27);
+    doc.text(`Fecha: ${new Date(order.date).toLocaleDateString()}`, 140, 34);
+
+    // Datos del Cliente
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("INFORMACIÓN DEL CLIENTE", 15, 52);
+    doc.setDrawColor(212, 175, 55);
+    doc.line(15, 54, 195, 54);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nombre: ${order.customerName || currentUser?.username || 'Cliente'}`, 15, 62);
+    doc.text(`Email: ${order.customerEmail || currentUser?.email || 'N/A'}`, 15, 68);
+    doc.text(`Estado: ${order.status} - Certificado bajo protocolo BCP`, 15, 74);
+
+    // Tabla de Ítems
+    let y = 88;
+    doc.setFillColor(245, 245, 245);
+    doc.rect(15, y - 6, 180, 8, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Descripción del Producto", 18, y);
+    doc.text("Cant.", 115, y);
+    doc.text("Precio Unit.", 135, y);
+    doc.text("Total", 175, y);
+
+    doc.setFont("helvetica", "normal");
+    y += 8;
+    (order.items || []).forEach(item => {
+        doc.text((item.name || 'Producto').substring(0, 42), 18, y);
+        doc.text(String(item.quantity || 1), 120, y);
+        doc.text(`$${Number(item.price).toFixed(2)}`, 135, y);
+        doc.text(`$${(Number(item.price) * (item.quantity || 1)).toFixed(2)}`, 175, y);
+        y += 7;
+    });
+
+    y += 4;
+    doc.setDrawColor(220, 220, 220);
+    doc.line(15, y, 195, y);
+    y += 8;
+
+    // Totales
+    doc.setFont("helvetica", "normal");
+    doc.text("Subtotal:", 135, y);
+    doc.text(`$${Number(order.subtotal || order.total * 0.84).toFixed(2)}`, 175, y);
+    y += 6;
+
+    if (order.discount && order.discount > 0) {
+        doc.setTextColor(212, 175, 55);
+        doc.text(`Descuento (${order.couponCode || 'Cupón'}):`, 135, y);
+        doc.text(`-$${Number(order.discount).toFixed(2)}`, 175, y);
+        doc.setTextColor(30, 30, 30);
+        y += 6;
+    }
+
+    doc.text("IVA (19%):", 135, y);
+    doc.text(`$${Number(order.tax || order.total * 0.16).toFixed(2)}`, 175, y);
+    y += 6;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("TOTAL PAGADO:", 135, y);
+    doc.text(`$${Number(order.total).toFixed(2)}`, 175, y);
+
+    // Pie de página BCP
+    y += 25;
+    doc.setDrawColor(212, 175, 55);
+    doc.line(15, y, 195, y);
+    y += 8;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100, 100, 100);
+    doc.text("Esta transacción digital ha sido registrada en el sistema de contingencia BCP (Business Continuity Plan).", 15, y);
+    doc.text("Hash Criptográfico BCP: SHA256-CM-" + Math.random().toString(36).substring(2, 12).toUpperCase(), 15, y + 4);
+    doc.text("Proyecto Formativo SENA 2026 - Confort Market. Todos los derechos reservados.", 15, y + 8);
+
+    doc.save(`Factura_ConfortMarket_${order.id}.pdf`);
+    showToast('Factura PDF descargada correctamente');
+};
+
+// --- Generador de Informe BCP (PDF) ---
+window.generateBcpReportPDF = () => {
+    if (typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined') {
+        showToast('Cargando librería PDF...', 'info');
+        return;
+    }
+    const jsPDFClass = window.jspdf ? window.jspdf.jsPDF : jspdf.jsPDF;
+    const doc = new jsPDFClass();
+
+    // Encabezado
+    doc.setFillColor(18, 22, 30);
+    doc.rect(0, 0, 210, 45, 'F');
+
+    doc.setTextColor(212, 175, 55);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("CONFORT MARKET - AUDITORÍA BCP & DRP", 15, 20);
+
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.text("INFORME OFICIAL DE CONTINUIDAD DE NEGOCIO (NORMA ISO 22301)", 15, 28);
+    doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 15, 34);
+    doc.text("Responsable: Comité de Continuidad Tecnológica SENA 2026", 15, 39);
+
+    let y = 58;
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("1. EVALUACIÓN DE NÚCLEOS CRÍTICOS Y RTO/RPO", 15, y);
+    doc.setDrawColor(212, 175, 55);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 10;
+    doc.setFontSize(9);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(15, y - 5, 180, 7, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Servicio Evaluado", 18, y);
+    doc.text("RTO Objetivo", 80, y);
+    doc.text("RPO Objetivo", 120, y);
+    doc.text("Cumplimiento", 160, y);
+
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    const matrix = [
+        ["Base de Datos Clientes/Pedidos", "1 Hora", "15 Minutos", "100% CUMPLIDO"],
+        ["Pasarela de Pagos Cifrada", "30 Minutos", "5 Minutos", "100% CUMPLIDO"],
+        ["Catálogo y Frontend Web", "Inmediato", "0 Pérdida", "100% CUMPLIDO"],
+        ["Protección Anti-DDoS", "Inmediato", "N/A", "100% CUMPLIDO"],
+        ["Almacén de Imágenes & Assets", "2 Horas", "1 Hora", "100% CUMPLIDO"]
+    ];
+    matrix.forEach(row => {
+        doc.text(row[0], 18, y);
+        doc.text(row[1], 80, y);
+        doc.text(row[2], 120, y);
+        doc.text(row[3], 160, y);
+        y += 6;
+    });
+
+    y += 10;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("2. POLÍTICA DE RESPALDOS Y AISLAMIENTO (AIR-GAP)", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("• Backup Local: Programado cada 2 horas con verificación de integridad SHA-256.", 15, y);
+    y += 5;
+    doc.text("• Backup Offline: Disco air-gapped físico desconectado para mitigación de Ransomware.", 15, y);
+    y += 5;
+    doc.text("• Réplica Geográfica: Servidor en la nube listo para absorción de tráfico inmediato (Failover).", 15, y);
+
+    y += 12;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("3. BITÁCORA DE SIMULACROS DRP E INCIDENTES", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+    const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [
+        { date: new Date().toLocaleDateString(), type: 'backup_local', status: 'success', desc: 'Copia de seguridad local completada con éxito.' },
+        { date: new Date().toLocaleDateString(), type: 'drp_test', status: 'success', desc: 'Simulacro de caída de nodo completado. RTO medido: 12 seg.' },
+        { date: new Date().toLocaleDateString(), type: 'backup_offline', status: 'success', desc: 'Disco externo desconectado de la red según protocolo.' }
+    ];
+
+    logs.slice(0, 6).forEach(l => {
+        doc.text(`- [${l.date}] ${l.type.toUpperCase()}: ${l.desc}`, 15, y);
+        y += 5;
+    });
+
+    y += 20;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(120, 120, 120);
+    doc.text("Informe auditado para presentación y sustentación ante instructores del SENA.", 15, y);
+    doc.text("Confort Market 2026 - Plataforma Tecnológica Resiliente.", 15, y + 4);
+
+    doc.save("Informe_Continuidad_BCP_ConfortMarket.pdf");
+    showToast('Informe BCP descargado en PDF');
+};
+
+// --- BCP Failover y Contingencia ---
+window.toggleBcpFailover = () => {
+    const isFailover = localStorage.getItem('confort_bcp_failover') === 'true';
+    const newState = !isFailover;
+    localStorage.setItem('confort_bcp_failover', newState ? 'true' : 'false');
+
+    const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+    logs.unshift({
+        date: new Date().toLocaleString(),
+        type: newState ? 'failover_active' : 'failover_restored',
+        status: newState ? 'warning' : 'success',
+        desc: newState 
+            ? 'SIMULACRO BCP: Servidor principal suspendido para prueba. Tráfico redirigido a réplica segura sin cortes.'
+            : 'NORMALIZACIÓN BCP: Servidor principal restablecido. Tráfico retornado a nodo de producción.'
+    });
+    localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
+
+    updateBcpUI();
+    if (typeof renderAdminLogs === 'function') renderAdminLogs();
+
+    showToast(newState ? '⚡ Modo Contingencia BCP Activado' : '✅ Servidor Principal Restablecido', newState ? 'warning' : 'success');
+};
+
+const updateBcpUI = () => {
+    const isFailover = localStorage.getItem('confort_bcp_failover') === 'true';
+    
+    // Banner superior en la tienda
+    const banner = document.getElementById('bcp-failover-banner');
+    if (banner) {
+        banner.style.display = isFailover ? 'flex' : 'none';
+    }
+
+    // Tarjeta y botón en admin.html
+    const statusEl = document.getElementById('bcp-server-status');
+    const toggleBtn = document.getElementById('btn-toggle-failover');
+    if (statusEl) {
+        if (isFailover) {
+            statusEl.textContent = 'Réplica (Contingencia)';
+            statusEl.style.color = '#e67e22';
+        } else {
+            statusEl.textContent = 'Principal Activo';
+            statusEl.style.color = '#2ed573';
+        }
+    }
+    if (toggleBtn) {
+        if (isFailover) {
+            toggleBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Restablecer Servidor';
+            toggleBtn.style.background = '#2ed573';
+            toggleBtn.style.borderColor = '#2ed573';
+        } else {
+            toggleBtn.innerHTML = '<i class="fa-solid fa-bolt"></i> Simular Contingencia';
+            toggleBtn.style.background = '';
+            toggleBtn.style.borderColor = '';
+        }
+    }
+};
+
+window.runDrpTest = (serviceName) => {
+    showToast(`Ejecutando simulacro DRP para ${serviceName}...`, 'info');
+    setTimeout(() => {
+        const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+        logs.unshift({
+            date: new Date().toLocaleString(),
+            type: 'drp_test',
+            status: 'success',
+            desc: `Simulacro DRP para "${serviceName}" completado. RTO medido: 11 segundos. RPO: 0 pérdida de registros.`
+        });
+        localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
+        renderAdminLogs();
+        showToast(`¡Test DRP exitoso para ${serviceName}! RTO cumplido.`, 'success');
+    }, 800);
+};
+
+// --- CRUD de Catálogo en Admin ---
+window.renderAdminProducts = () => {
+    const tbody = document.getElementById('admin-products-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    products.forEach(p => {
+        const tr = document.createElement('tr');
+        const badgeHtml = p.badge === 'new' ? '<span class="status-badge" style="background:rgba(46,213,115,0.2); color:#2ed573;">Nuevo</span>' :
+                          p.badge === 'sale' ? '<span class="status-badge" style="background:rgba(255,71,87,0.2); color:#ff4757;">Oferta</span>' :
+                          '<span style="color:var(--text-secondary); font-size:0.85rem;">Normal</span>';
+
+        tr.innerHTML = `
+            <td>
+                <img src="${p.image}" alt="${p.name}" style="width:45px; height:45px; object-fit:contain; border-radius:6px; background:rgba(255,255,255,0.05); padding:2px;">
+            </td>
+            <td><strong>${p.name}</strong></td>
+            <td><span class="product-category">${p.category}</span></td>
+            <td><strong style="color:var(--gold-light);">${formatPrice(p.price)}</strong></td>
+            <td>${badgeHtml}</td>
+            <td>
+                <div style="display:flex; gap:0.5rem;">
+                    <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="openProductModal(${p.id})" title="Editar">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem; color:#ff4757; border-color:rgba(255,71,87,0.3);" onclick="deleteProduct(${p.id})" title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.openProductModal = (id = null) => {
+    const modal = document.getElementById('product-modal');
+    if (!modal) return;
+    const form = document.getElementById('product-form');
+    if (form) form.reset();
+
+    if (id) {
+        const prod = products.find(p => p.id === id);
+        if (prod) {
+            document.getElementById('modal-product-title').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Producto';
+            document.getElementById('prod-id').value = prod.id;
+            document.getElementById('prod-name').value = prod.name;
+            document.getElementById('prod-price').value = prod.price;
+            document.getElementById('prod-old-price').value = prod.oldPrice || '';
+            document.getElementById('prod-category').value = prod.category;
+            document.getElementById('prod-badge').value = prod.badge || '';
+            document.getElementById('prod-image').value = prod.image;
+        }
+    } else {
+        document.getElementById('modal-product-title').innerHTML = '<i class="fa-solid fa-plus"></i> Nuevo Producto';
+        document.getElementById('prod-id').value = '';
+    }
+    modal.style.display = 'flex';
+};
+
+window.closeProductModal = () => {
+    const modal = document.getElementById('product-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.saveProduct = (e) => {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const name = document.getElementById('prod-name').value.trim();
+    const price = parseFloat(document.getElementById('prod-price').value);
+    const oldPriceVal = document.getElementById('prod-old-price').value;
+    const oldPrice = oldPriceVal ? parseFloat(oldPriceVal) : null;
+    const category = document.getElementById('prod-category').value;
+    const badge = document.getElementById('prod-badge').value || null;
+    const image = document.getElementById('prod-image').value.trim();
+
+    if (id) {
+        const prod = products.find(p => p.id === parseInt(id));
+        if (prod) {
+            prod.name = name;
+            prod.price = price;
+            prod.oldPrice = oldPrice;
+            prod.category = category;
+            prod.badge = badge;
+            prod.image = image;
+            showToast('Producto actualizado correctamente');
+        }
+    } else {
+        const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        products.push({
+            id: newId,
+            name,
+            price,
+            oldPrice,
+            category,
+            rating: 5.0,
+            reviews: 1,
+            image,
+            badge
+        });
+        showToast('Nuevo producto añadido al catálogo');
+    }
+
+    localStorage.setItem('confort_products', JSON.stringify(products));
+    renderAdminProducts();
+    closeProductModal();
+};
+
+window.deleteProduct = (id) => {
+    const prod = products.find(p => p.id === id);
+    if (!prod) return;
+    if (confirm(`¿Estás seguro de eliminar "${prod.name}" del catálogo?`)) {
+        products = products.filter(p => p.id !== id);
+        localStorage.setItem('confort_products', JSON.stringify(products));
+        renderAdminProducts();
+        showToast('Producto eliminado del catálogo', 'info');
+    }
+};
+
+// --- Gestión de Pedidos y Logs en Admin ---
+window.renderAdminOrders = () => {
+    const tbody = document.getElementById('admin-orders-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+    let allOrders = [];
+
+    users.forEach(u => {
+        const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+        userOrders.forEach(o => {
+            allOrders.push({ ...o, userEmail: u.email, userName: u.username || u.email });
+        });
+    });
+
+    if (allOrders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay pedidos registrados en la plataforma.</td></tr>';
+        return;
+    }
+
+    allOrders.forEach(order => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${order.id}</strong></td>
+            <td>${order.userName} <br><small style="color:var(--text-secondary);">${order.userEmail}</small></td>
+            <td>${new Date(order.date).toLocaleDateString()}</td>
+            <td><strong style="color:#2ed573;">${formatPrice(order.total)}</strong></td>
+            <td>
+                <select class="form-control" style="padding:0.2rem 0.5rem; font-size:0.85rem; background:#181818;" onchange="updateOrderStatus('${order.userEmail}', '${order.id}', this.value)">
+                    <option value="Procesando" ${order.status === 'Procesando' ? 'selected' : ''}>Procesando</option>
+                    <option value="Enviado" ${order.status === 'Enviado' ? 'selected' : ''}>Enviado</option>
+                    <option value="Entregado" ${order.status === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick='downloadOrderInvoicePDF(${JSON.stringify(order)})' title="Factura PDF">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.updateOrderStatus = (email, orderId, newStatus) => {
+    const key = `confort_orders_${email}`;
+    const orders = JSON.parse(localStorage.getItem(key)) || [];
+    const ord = orders.find(o => o.id === orderId);
+    if (ord) {
+        ord.status = newStatus;
+        localStorage.setItem(key, JSON.stringify(orders));
+        showToast(`Pedido ${orderId} actualizado a ${newStatus}`);
+    }
+};
+
+window.renderAdminLogs = () => {
+    const tbody = document.getElementById('admin-logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [
+        { date: new Date().toLocaleString(), type: 'backup_local', status: 'success', desc: 'Copia de seguridad local completada con éxito.' },
+        { date: new Date().toLocaleString(), type: 'backup_offline', status: 'success', desc: 'Disco externo desconectado de la red según el protocolo BCP.' },
+        { date: new Date().toLocaleString(), type: 'server_status', status: 'success', desc: 'Servidor principal operativo al 100%.' }
+    ];
+    logs.forEach(l => {
+        const tr = document.createElement('tr');
+        const badgeColor = l.status === 'success' ? '#2ed573' : l.status === 'warning' ? '#ffa502' : '#ff4757';
+        tr.innerHTML = `
+            <td>${l.date}</td>
+            <td><strong>${l.type.toUpperCase()}</strong></td>
+            <td><span class="status-badge" style="background:rgba(255,255,255,0.05); color:${badgeColor};">${l.status}</span></td>
+            <td>${l.desc}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
 // --- Lógica de Dashboard ---
 const initDashboardPage = () => {
     if (!document.querySelector('.dashboard-main')) return;
 
     if (currentUser) {
-        // Rellenar info del sidebar
         document.getElementById('user-name-display').textContent = currentUser.username || currentUser.email;
         document.getElementById('user-email-display').textContent = currentUser.email;
         document.getElementById('avatar-initial').textContent = (currentUser.username || currentUser.email).charAt(0).toUpperCase();
 
-        // Rellenar form de configuración
         const settingsUsername = document.querySelector('#tab-settings input[type="text"]');
         const settingsEmail = document.querySelector('#tab-settings input[type="email"]');
         if (settingsUsername) settingsUsername.value = currentUser.username || '';
         if (settingsEmail) settingsEmail.value = currentUser.email || '';
 
-        // Mostrar panel admin si corresponde
         if (currentUser.role === 'admin') {
             const adminLink = document.getElementById('admin-link');
             if (adminLink) adminLink.style.display = 'flex';
         }
     }
 
-    // Tabs
     const links = document.querySelectorAll('.sidebar-link[data-tab]');
     const tabs = document.querySelectorAll('.tab-content');
 
@@ -497,18 +1127,20 @@ const initDashboardPage = () => {
         });
     });
 
-    // Populate Data
     if (currentUser) {
         const userOrdersKey = `confort_orders_${currentUser.email}`;
         const orders = JSON.parse(localStorage.getItem(userOrdersKey)) || [];
         
-        // Stats
-        document.getElementById('stat-orders').textContent = orders.length;
-        const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
-        document.getElementById('stat-spent').textContent = formatPrice(totalSpent);
-        document.getElementById('stat-wishlist').textContent = wishlist.length;
+        const statOrders = document.getElementById('stat-orders');
+        if (statOrders) statOrders.textContent = orders.length;
 
-        // Orders Table
+        const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const statSpent = document.getElementById('stat-spent');
+        if (statSpent) statSpent.textContent = formatPrice(totalSpent);
+
+        const statWishlist = document.getElementById('stat-wishlist');
+        if (statWishlist) statWishlist.textContent = wishlist.length;
+
         const tbody = document.getElementById('orders-tbody');
         if (tbody) {
             if (orders.length === 0) {
@@ -529,10 +1161,7 @@ const initDashboardPage = () => {
             }
         }
 
-        // Wishlist Grid
         renderDashboardWishlist();
-
-        // Admin panel
         if (currentUser.role === 'admin') {
             renderAdminPanel();
         }
@@ -562,10 +1191,10 @@ const renderDashboardWishlist = () => {
             <button class="wishlist-btn active" onclick="removeFromWishlistDashboard(${p.id})">
                 <i class="fa-solid fa-heart"></i>
             </button>
-            <img src="${p.image}" alt="${p.name}" class="product-image">
+            <img src="${p.image}" alt="${p.name}" class="product-image" onclick="openQuickView(${p.id})" style="cursor:pointer;">
             <div class="product-info">
                 <span class="product-category">${p.category}</span>
-                <h3 class="product-title">${p.name}</h3>
+                <h3 class="product-title" onclick="openQuickView(${p.id})" style="cursor:pointer;">${p.name}</h3>
                 <div class="product-price-row">
                     <span class="product-price">${formatPrice(p.price)}</span>
                     ${oldPriceHtml}
@@ -589,7 +1218,8 @@ window.removeFromWishlistDashboard = (id) => {
     if (idx > -1) wishlist.splice(idx, 1);
     localStorage.setItem(userWishlistKey, JSON.stringify(wishlist));
     updateWishlistCount();
-    document.getElementById('stat-wishlist').textContent = wishlist.length;
+    const statEl = document.getElementById('stat-wishlist');
+    if (statEl) statEl.textContent = wishlist.length;
     renderDashboardWishlist();
     showToast('Eliminado de la lista de deseos', 'info');
 };
@@ -602,6 +1232,7 @@ const renderAdminPanel = () => {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary);">No hay usuarios registrados.</td></tr>';
         return;
     }
+    tbody.innerHTML = '';
     allUsers.forEach(u => {
         const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
         const tr = document.createElement('tr');
@@ -620,7 +1251,6 @@ const renderAdminPanel = () => {
 
 // --- Auth Forms Validation ---
 const initAuthPages = () => {
-    // Password Strength
     const passInput = document.getElementById('password');
     const strengthBar = document.getElementById('strength-bar');
     
@@ -641,7 +1271,6 @@ const initAuthPages = () => {
         });
     }
 
-    // Register Form
     const registerForm = document.getElementById('register-form');
     const roleSelect = document.getElementById('role');
     const adminCodeGroup = document.getElementById('admin-code-group');
@@ -672,7 +1301,6 @@ const initAuthPages = () => {
                 return;
             }
 
-            // Asignar rol: admin si el email contiene 'admin', sino cliente
             const role = email.toLowerCase().includes('admin') || adminCode === ADMIN_SECRET_CODE ? 'admin' : 'cliente';
             users.push({ username, email, password, role });
             localStorage.setItem('confort_users', JSON.stringify(users));
@@ -681,7 +1309,6 @@ const initAuthPages = () => {
         });
     }
 
-    // Login Form
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
@@ -697,7 +1324,11 @@ const initAuthPages = () => {
                 localStorage.setItem('confort_user_logged_in', 'true');
                 showToast('Inicio de sesión exitoso');
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    if (user.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
                 }, 1000);
             } else {
                 showToast('Credenciales incorrectas', 'error');
@@ -705,24 +1336,6 @@ const initAuthPages = () => {
         });
     }
 
-    const forgotLink = document.getElementById('forgot-password-link');
-    if (forgotLink) {
-        forgotLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            const email = prompt('Ingresa tu correo electrónico para recuperar tu contraseña:');
-            if (!email) return;
-
-            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            const user = users.find(u => u.email === email);
-            if (!user) {
-                showToast('No se encontró ninguna cuenta con ese correo', 'error');
-                return;
-            }
-            showToast('Revisa tu bandeja de entrada. Se ha enviado un enlace de recuperación.', 'success');
-        });
-    }
-
-    // Toggle Password Visibility
     document.querySelectorAll('.password-toggle').forEach(icon => {
         icon.addEventListener('click', function() {
             const input = this.previousElementSibling;

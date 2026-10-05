@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- BCP Failover Active Banner -->
+    <div class="bcp-banner" id="bcp-failover-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span><strong>PROTOCOLO BCP ACTIVO:</strong> El sistema está operando en el Servidor Réplica de Contingencia (Failover Seguro). Servicio 100% disponible.</span>
+    </div>
+
     <!-- Loading Screen -->
     <div class="loading-screen" id="loading-screen">
         <div class="loader-logo gold-gradient-text">Confort Market</div>
@@ -141,6 +147,46 @@
             <p>&copy; 2026 Confort Market. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <!-- Quick View Product Modal -->
+    <div class="modal-overlay" id="quick-view-modal" style="display: none;">
+        <div class="glass-card quick-view-box">
+            <button class="modal-close" onclick="closeQuickView()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="quick-view-img-container">
+                <img src="" alt="" id="qv-image" class="quick-view-img">
+            </div>
+            <div class="quick-view-details">
+                <span class="product-category" id="qv-category">Categoría</span>
+                <h2 id="qv-title" style="font-size:1.6rem; color:var(--text-primary); margin: 0.3rem 0;">Nombre Producto</h2>
+                <div class="product-rating" id="qv-rating">
+                    <span class="stars"><i class="fa-solid fa-star"></i> 4.9</span>
+                    <span>(128 reseñas)</span>
+                </div>
+                <div class="product-price-row" style="margin: 0.5rem 0;">
+                    <span class="product-price" id="qv-price" style="font-size: 1.6rem;">$0.00</span>
+                    <span class="product-price-old" id="qv-old-price" style="font-size: 1.1rem;"></span>
+                </div>
+                <p id="qv-description" style="color:var(--text-secondary); line-height:1.5; font-size:0.95rem;">
+                    Descripción detallada del producto.
+                </p>
+                <ul class="quick-view-specs">
+                    <li><i class="fa-solid fa-shield-check"></i> Garantía oficial de 2 años Confort Care</li>
+                    <li><i class="fa-solid fa-truck-fast"></i> Envío express nacional garantizado</li>
+                    <li><i class="fa-solid fa-lock"></i> Compra respaldada por protocolo de seguridad BCP</li>
+                </ul>
+                <div style="display:flex; align-items:center; gap: 1rem; margin-top: 1rem;">
+                    <div class="qty-selector">
+                        <button class="qty-btn" type="button" onclick="changeQvQty(-1)">-</button>
+                        <span class="qty-value" id="qv-qty">1</span>
+                        <button class="qty-btn" type="button" onclick="changeQvQty(1)">+</button>
+                    </div>
+                    <button class="btn btn-primary" id="qv-add-cart-btn" style="flex:1;">
+                        <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="auth-guard.js"></script>
 </head>
 <body>
@@ -102,10 +103,22 @@
                 <!-- JS inserta items aquí -->
             </div>
 
+            <!-- Cupon de Descuento -->
+            <div class="coupon-box">
+                <input type="text" id="coupon-input" class="form-control" placeholder="Cupón (ej. SENA2026)" style="padding-left:1rem; text-transform:uppercase;">
+                <button type="button" class="btn btn-outline" onclick="applyCoupon()" style="white-space:nowrap; padding:0.6rem 1rem;">
+                    <i class="fa-solid fa-tag"></i> Aplicar
+                </button>
+            </div>
+
             <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <div class="summary-row">
                     <span>Subtotal</span>
                     <span id="checkout-subtotal">$0.00</span>
+                </div>
+                <div id="coupon-row" class="summary-row" style="display:none; color:var(--gold-primary);">
+                    <span>Descuento (<span id="coupon-name"></span>)</span>
+                    <span id="checkout-discount">-$0.00</span>
                 </div>
                 <div class="summary-row">
                     <span>Impuestos (19%)</span>
@@ -119,6 +132,47 @@
                     <span>Total</span>
                     <span id="checkout-total">$0.00</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Success & Invoice Modal -->
+    <div class="modal-overlay" id="order-success-modal" style="display: none;">
+        <div class="glass-card invoice-box animate-fade-up">
+            <div style="font-size: 3.5rem; color: #2ed573; margin-bottom: 1rem;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">¡Pago Procesado con Éxito!</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Tu pedido ha sido confirmado y registrado bajo el protocolo seguro BCP.
+            </p>
+            
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 1.2rem; text-align: left; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-secondary);">No. Pedido:</span>
+                    <strong id="modal-order-id" class="gold-text">ORD-000000</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-secondary);">Fecha:</span>
+                    <span id="modal-order-date">05/10/2026</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: var(--text-secondary);">Total Pagado:</span>
+                    <strong id="modal-order-total" style="color: #2ed573; font-size: 1.1rem;">$0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">Seguridad BCP:</span>
+                    <span style="color: var(--gold-light); font-size: 0.85rem;"><i class="fa-solid fa-shield-halved"></i> Transacción Cifrada</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary" onclick="downloadOrderInvoicePDF()" style="flex: 1; padding: 0.9rem;">
+                    <i class="fa-solid fa-file-pdf"></i> Descargar Factura PDF
+                </button>
+                <a href="dashboard.html" class="btn btn-outline" style="flex: 1; padding: 0.9rem; text-align:center;">
+                    <i class="fa-solid fa-user"></i> Mis Pedidos
+                </a>
             </div>
         </div>
     </div>

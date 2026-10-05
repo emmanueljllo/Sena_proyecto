@@ -3,90 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Confort Market BCP</title>
+    <title>Panel de Administración & BCP - Confort Market</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="auth-guard.js"></script>
 </head>
 <body>
-    <script src="auth-guard.js"></script>
-    <nav class="navbar">
-        <div class="logo">
-            <span class="gold-text">Admin</span> BCP
-        </div>
-        <div class="nav-links">
-            <a href="index.html">Vista Tienda</a>
-            <a href="login.html">Cerrar Sesión</a>
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-brand">
+            <img src="assets/logo.png" alt="Confort Market" style="height: 45px;">
+        </a>
+        <div style="display:flex; align-items:center; gap: 1rem;">
+            <a href="index.html" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size:0.85rem;">
+                <i class="fa-solid fa-store"></i> Ver Tienda
+            </a>
+            <a href="dashboard.html" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size:0.85rem;">
+                <i class="fa-solid fa-user"></i> Mi Cuenta
+            </a>
+            <button onclick="logout(event)" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size:0.85rem; background:#ff4757; border-color:#ff4757;">
+                <i class="fa-solid fa-right-from-bracket"></i> Salir
+            </button>
         </div>
     </nav>
 
+    <!-- Admin Layout -->
     <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <ul class="sidebar-menu">
-                <li><a href="#" class="active">Estado General</a></li>
-                <li><a href="#">Gestión de Backups</a></li>
-                <li><a href="#">Monitoreo de Servidores</a></li>
-                <li><a href="#">Simulacros DRP</a></li>
-                <li><a href="#">Auditoría de Incidentes</a></li>
-            </ul>
-        </aside>
-
-        <main class="dashboard-content">
-            <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Centro de <span class="gold-gradient">Comando BCP</span></h2>
-            
-            <div class="stat-cards">
-                <div class="stat-card">
-                    <h4>Estado del Servidor Principal</h4>
-                    <div class="stat-value" style="color: #4CAF50; font-size: 2rem;">Operativo</div>
+            <div class="user-profile">
+                <div class="avatar" style="background:linear-gradient(135deg, #d4af37, #aa7c11); color:#000;">
+                    <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <div class="stat-card">
-                    <h4>Último Backup Local</h4>
-                    <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Hace 2 horas</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Último Backup Offline</h4>
-                    <div class="stat-value" style="font-size: 1.5rem; margin-top: 1rem;">Hace 3 días</div>
+                <div class="user-info">
+                    <h3 id="admin-username-display">Administrador</h3>
+                    <p>admin@confortmarket.com</p>
+                    <span class="user-role-badge" style="background:rgba(212,175,55,0.2); color:var(--gold-primary);">Oficial BCP</span>
                 </div>
             </div>
 
-            <div class="bcp-phase">
-                <h3>Monitoreo de Infraestructura y RTO/RPO</h3>
-                <table class="bcp-table">
-                    <thead>
-                        <tr>
-                            <th>Servicio Crítico</th>
-                            <th>Estado Actual</th>
-                            <th>RTO Definido</th>
-                            <th>RPO Definido</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Base de datos de clientes</td>
-                            <td style="color: #4CAF50;">Sincronizado</td>
-                            <td>1 hora</td>
-                            <td>15 minutos</td>
-                            <td><button class="buy-btn" style="padding: 0.3rem;">Test DRP</button></td>
-                        </tr>
-                        <tr>
-                            <td>Sistema de Pagos</td>
-                            <td style="color: #4CAF50;">Activo</td>
-                            <td>30 minutos</td>
-                            <td>5 minutos</td>
-                            <td><button class="buy-btn" style="padding: 0.3rem;">Test DRP</button></td>
-                        </tr>
-                        <tr>
-                            <td>Protección Anti-DDoS</td>
-                            <td style="color: #ffa64d;">Alerta Menor</td>
-                            <td>Inmediato</td>
-                            <td>N/A</td>
-                            <td><button class="buy-btn" style="padding: 0.3rem;">Ver Logs</button></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <nav class="sidebar-nav">
+                <a href="#" class="sidebar-link active" data-admin-tab="tab-admin-bcp">
+                    <i class="fa-solid fa-server"></i> Centro de Mando BCP
+                </a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-crud">
+                    <i class="fa-solid fa-boxes-stacked"></i> Catálogo (CRUD)
+                </a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-orders">
+                    <i class="fa-solid fa-receipt"></i> Gestión de Pedidos
+                </a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-logs">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Auditoría y Logs
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="dashboard-main" style="padding: 2rem;">
+            <!-- Tab 1: Centro de Mando BCP -->
+            <div id="tab-admin-bcp" class="admin-tab-content active">
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2>Centro de Mando <span class="gold-text">BCP & DRP</span></h2>
+                        <p style="color:var(--text-secondary);">Supervisión de Continuidad de Negocio y Recuperación ante Desastres.</p>
+                    </div>
+                    <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-outline" onclick="generateBcpReportPDF()">
+                            <i class="fa-solid fa-file-pdf"></i> Descargar Informe BCP
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btn-toggle-failover" onclick="toggleBcpFailover()">
+                            <i class="fa-solid fa-bolt"></i> Simular Contingencia
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BCP KPI Cards -->
+                <div class="stat-grid" style="margin-bottom: 2rem;">
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                        <div class="stat-value" id="bcp-server-status" style="font-size:1.5rem; color:#2ed573;">Principal Activo</div>
+                        <div class="stat-label">Estado del Servidor</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
+                        <div class="stat-value" id="bcp-last-backup" style="font-size:1.5rem; color:var(--gold-light);">Hace 15 min</div>
+                        <div class="stat-label">Último Backup Local</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-vault"></i></div>
+                        <div class="stat-value" style="font-size:1.5rem; color:#3498db;">Aislado Seguro</div>
+                        <div class="stat-label">Backup Offline (Air-Gap)</div>
+                    </div>
+                </div>
+
+                <!-- Infrastructure & RTO/RPO Table -->
+                <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1.2rem;"><i class="fa-solid fa-network-wired"></i> Monitoreo de Infraestructura Crítica</h3>
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Servicio Crítico</th>
+                                    <th>Estado Actual</th>
+                                    <th>RTO Definido</th>
+                                    <th>RPO Definido</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Base de Datos Clientes & Pedidos</strong></td>
+                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Sincronizado</span></td>
+                                    <td>1 hora</td>
+                                    <td>15 minutos</td>
+                                    <td>
+                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Base de Datos')">
+                                            Test DRP
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Pasarela de Pagos Cifrada</strong></td>
+                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Operativo</span></td>
+                                    <td>30 minutos</td>
+                                    <td>5 minutos</td>
+                                    <td>
+                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Pasarela de Pagos')">
+                                            Test DRP
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Protección Anti-DDoS & Cloudflare</strong></td>
+                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Protegido</span></td>
+                                    <td>Inmediato</td>
+                                    <td>N/A</td>
+                                    <td>
+                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Anti-DDoS')">
+                                            Verificar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Almacén de Imágenes & Assets</strong></td>
+                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Local / CDN</span></td>
+                                    <td>2 horas</td>
+                                    <td>1 hora</td>
+                                    <td>
+                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Almacén Assets')">
+                                            Test DRP
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Catálogo CRUD -->
+            <div id="tab-admin-crud" class="admin-tab-content" style="display:none;">
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2>Gestión de <span class="gold-text">Catálogo (CRUD)</span></h2>
+                        <p style="color:var(--text-secondary);">Crea, edita o elimina productos del inventario de Confort Market.</p>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="openProductModal()">
+                        <i class="fa-solid fa-plus"></i> Nuevo Producto
+                    </button>
+                </div>
+
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Producto</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Insignia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-products-tbody">
+                                <!-- JS inyecta filas de productos aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Gestión de Pedidos -->
+            <div id="tab-admin-orders" class="admin-tab-content" style="display:none;">
+                <div class="dashboard-header">
+                    <h2>Gestión de <span class="gold-text">Pedidos Globales</span></h2>
+                    <p style="color:var(--text-secondary);">Revisa y actualiza el estado de las órdenes de los clientes.</p>
+                </div>
+
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                    <th>Estado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-orders-tbody">
+                                <!-- Inyectado por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Auditoría y Logs -->
+            <div id="tab-admin-logs" class="admin-tab-content" style="display:none;">
+                <div class="dashboard-header">
+                    <h2>Auditoría de <span class="gold-text">Continuidad (BCP)</span></h2>
+                    <p style="color:var(--text-secondary);">Registro inmutable de simulacros, respaldos e incidentes.</p>
+                </div>
+
+                <div class="glass-card" style="padding: 1.5rem;">
+                    <div class="orders-table-container">
+                        <table class="orders-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Tipo de Evento</th>
+                                    <th>Estado</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-logs-tbody">
+                                <!-- JS inyecta logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
+
+    <!-- Product Modal (Create / Edit) -->
+    <div class="modal-overlay" id="product-modal" style="display: none;">
+        <div class="glass-card modal-box" style="max-width: 550px;">
+            <button class="modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h3 id="modal-product-title" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-box-open"></i> Producto</h3>
+            <form id="product-form" onsubmit="saveProduct(event)">
+                <input type="hidden" id="prod-id">
+                
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" id="prod-name" class="form-control" style="padding-left:1rem;" required>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label>Precio ($USD)</label>
+                        <input type="number" id="prod-price" class="form-control" style="padding-left:1rem;" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Anterior (Opcional)</label>
+                        <input type="number" id="prod-old-price" class="form-control" style="padding-left:1rem;" step="0.01">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select id="prod-category" class="form-control" style="padding-left:1rem; background:#121212;">
+                            <option value="Computadores">Computadores</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Accesorios">Accesorios</option>
+                            <option value="Drones">Drones</option>
+                            <option value="Hogar">Hogar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Insignia</label>
+                        <select id="prod-badge" class="form-control" style="padding-left:1rem; background:#121212;">
+                            <option value="">Ninguna</option>
+                            <option value="new">Nuevo</option>
+                            <option value="sale">Oferta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Ruta o URL de Imagen</label>
+                    <input type="text" id="prod-image" class="form-control" placeholder="assets/nombre_imagen.jpg" style="padding-left:1rem;" required>
+                </div>
+
+                <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeProductModal()">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initAdminTabs();
+            renderAdminProducts();
+            renderAdminOrders();
+            renderAdminLogs();
+        });
+
+        function initAdminTabs() {
+            const links = document.querySelectorAll('.sidebar-link[data-admin-tab]');
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    links.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    const targetId = link.getAttribute('data-admin-tab');
+                    document.querySelectorAll('.admin-tab-content').forEach(c => c.style.display = 'none');
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) targetEl.style.display = 'block';
+                });
+            });
+        }
+    </script>
 </body>
 </html>
