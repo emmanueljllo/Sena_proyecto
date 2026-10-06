@@ -51,6 +51,7 @@ INSERT IGNORE INTO products (name, description, price, stock, image_url) VALUES
 ('Ratón Viper Pro', 'Ratón gaming de precisión.', 85.00, 80, 'assets/premium_mouse.jpg'),
 ('Silla Ergonomic Plus', 'Silla ergonómica de oficina de alta gama.', 320.00, 25, 'assets/premium_chair.jpg'),
 ('Cámara Stream 4K', 'Cámara web 4K para streaming y grabación profesional.', 150.00, 35, 'assets/premium_camera.jpg'),
+('Micro Studio Voice', 'Micrófono de estudio profesional con cápsula dorada.', 190.00, 30, 'assets/premium_microphone.jpg'),
 ('Gafas Reality Max', 'Gafas de realidad virtual premium de última generación.', 599.00, 20, 'assets/premium_glasses.jpg'),
 ('Drone SkyEye Pro', 'Drone profesional con cámara de alta precisión y estabilizador.', 899.00, 15, 'assets/premium_drone.jpg'),
 ('Tablet ArtPad 12"', 'Tablet profesional para diseño y productividad con lápiz óptico.', 250.00, 45, 'assets/premium_tablet.jpg'),

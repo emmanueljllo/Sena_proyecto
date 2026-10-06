@@ -8,7 +8,7 @@ const defaultProducts = [
     { id: 6, name: "Ratón Viper Pro", price: 85.00, oldPrice: null, category: "Accesorios", rating: 4.5, reviews: 112, image: "assets/premium_mouse.jpg", badge: null },
     { id: 7, name: "Silla Ergonomic Plus", price: 320.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 89, image: "assets/premium_chair.jpg", badge: null },
     { id: 8, name: "Cámara Stream 4K", price: 150.00, oldPrice: null, category: "Accesorios", rating: 4.4, reviews: 67, image: "assets/premium_camera.jpg", badge: null },
-    { id: 9, name: "Micro Studio Voice", price: 190.00, oldPrice: 220.00, category: "Audio", rating: 4.9, reviews: 145, image: "https://picsum.photos/seed/mic/500/500", badge: "sale" },
+    { id: 9, name: "Micro Studio Voice 24K", price: 190.00, oldPrice: 220.00, category: "Audio", rating: 4.9, reviews: 145, image: "assets/premium_microphone.jpg", badge: "sale" },
     { id: 10, name: "Gafas Reality Max", price: 599.00, oldPrice: null, category: "Drones", rating: 4.6, reviews: 34, image: "assets/premium_glasses.jpg", badge: "new" },
     { id: 11, name: "Drone SkyEye Pro", price: 899.00, oldPrice: 999.00, category: "Drones", rating: 4.8, reviews: 42, image: "assets/premium_drone.jpg", badge: "sale" },
     { id: 12, name: "Tablet ArtPad 12\"", price: 250.00, oldPrice: null, category: "Computadores", rating: 4.5, reviews: 76, image: "assets/premium_tablet.jpg", badge: null },
@@ -17,6 +17,14 @@ const defaultProducts = [
 
 // Cargar catálogo persistido o defaults
 let products = JSON.parse(localStorage.getItem('confort_products')) || defaultProducts;
+
+// Sincronizar imagen del micrófono si quedó antigua en localStorage
+const micProduct = products.find(p => p.id === 9);
+if (micProduct && (micProduct.image.includes('picsum') || micProduct.image !== 'assets/premium_microphone.jpg')) {
+    micProduct.image = 'assets/premium_microphone.jpg';
+    micProduct.name = 'Micro Studio Voice 24K';
+    localStorage.setItem('confort_products', JSON.stringify(products));
+}
 
 // --- Estado Global ---
 const ADMIN_SECRET_CODE = 'CONFORTADMIN2026';
@@ -233,9 +241,17 @@ const toggleWishlist = (productId) => {
     if (typeof renderDashboardWishlist === 'function') renderDashboardWishlist();
 };
 
-// --- Quick View Modal ---
+// --- Quick View Modal & Ediciones ---
 let currentQvProduct = null;
 let currentQvQty = 1;
+let currentEdition = 'Obsidian & Gold';
+
+window.selectEdition = (element, editionName) => {
+    currentEdition = editionName;
+    document.querySelectorAll('.edition-pill').forEach(p => p.classList.remove('active'));
+    element.classList.add('active');
+    showToast(`Acabado "${editionName}" seleccionado`);
+};
 
 window.openQuickView = (productId) => {
     const product = products.find(p => p.id === productId);
@@ -270,14 +286,20 @@ window.openQuickView = (productId) => {
         }
     }
 
+    const installmentEl = document.getElementById('qv-installments');
+    if (installmentEl) {
+        const monthly = (product.price / 6).toFixed(2);
+        installmentEl.innerHTML = `<i class="fa-solid fa-credit-card"></i> O 6 cuotas de <strong>$${monthly}</strong> sin interés con Confort Pay`;
+    }
+
     const ratingEl = document.getElementById('qv-rating');
     if (ratingEl) {
-        ratingEl.innerHTML = `<span class="stars"><i class="fa-solid fa-star"></i> ${product.rating || 4.8}</span> <span>(${product.reviews || 85} reseñas)</span>`;
+        ratingEl.innerHTML = `<span class="stars"><i class="fa-solid fa-star"></i> ${product.rating || 4.8}</span> <span>(${product.reviews || 85} reseñas VIP)</span>`;
     }
 
     const descEl = document.getElementById('qv-description');
     if (descEl) {
-        descEl.textContent = `${product.name} combina ingeniería de precisión con materiales aeroespaciales y acabado dorado de lujo. Certificado bajo los más exigentes estándares tecnológicos y respaldado por la garantía institucional Confort Care.`;
+        descEl.textContent = `${product.name} combina ingeniería de precisión con materiales aeroespaciales, chasis en titanio y detalles en oro de 24K. Certificado bajo los más exigentes estándares tecnológicos y respaldado por la garantía institucional Confort Care y protocolo de seguridad BCP.`;
     }
 
     const qtyEl = document.getElementById('qv-qty');
@@ -288,6 +310,15 @@ window.openQuickView = (productId) => {
         addBtn.onclick = () => {
             addToCart(product.id, currentQvQty);
             closeQuickView();
+        };
+    }
+
+    const buyNowBtn = document.getElementById('qv-buy-now-btn');
+    if (buyNowBtn) {
+        buyNowBtn.onclick = () => {
+            addToCart(product.id, currentQvQty);
+            closeQuickView();
+            window.location.href = 'checkout.html';
         };
     }
 
@@ -306,18 +337,52 @@ window.changeQvQty = (delta) => {
 };
 
 // --- Lógica de la Página de Inicio (Index) ---
+let currentSort = 'featured';
+
+window.handleSortChange = (sortType) => {
+    currentSort = sortType;
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput ? searchInput.value : '';
+    const activeChip = document.querySelector('.filter-chip.active');
+    const category = activeChip ? activeChip.dataset.filter : 'all';
+    renderProducts(searchTerm, category, currentSort);
+};
+
 const initIndexPage = () => {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
 
     renderProducts();
 
+    // Contador regresivo VIP
+    const updateCountdown = () => {
+        const hoursEl = document.getElementById('cd-hours');
+        const minsEl = document.getElementById('cd-mins');
+        const secsEl = document.getElementById('cd-secs');
+        if (!hoursEl || !minsEl || !secsEl) return;
+
+        const now = new Date();
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+        const diff = Math.max(0, endOfDay - now);
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+        hoursEl.textContent = String(hours).padStart(2, '0');
+        minsEl.textContent = String(mins).padStart(2, '0');
+        secsEl.textContent = String(secs).padStart(2, '0');
+    };
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
     // Búsqueda
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const activeFilter = document.querySelector('.filter-chip.active');
-            renderProducts(e.target.value, activeFilter ? activeFilter.dataset.filter : 'all');
+            renderProducts(e.target.value, activeFilter ? activeFilter.dataset.filter : 'all', currentSort);
         });
     }
 
@@ -328,12 +393,12 @@ const initIndexPage = () => {
             filterChips.forEach(c => c.classList.remove('active'));
             e.target.classList.add('active');
             const searchTerm = searchInput ? searchInput.value : '';
-            renderProducts(searchTerm, e.target.dataset.filter);
+            renderProducts(searchTerm, e.target.dataset.filter, currentSort);
         });
     });
 };
 
-const renderProducts = (search = '', category = 'all') => {
+const renderProducts = (search = '', category = 'all', sort = 'featured') => {
     const productsGrid = document.getElementById('products-grid');
     if (!productsGrid) return;
 
@@ -345,13 +410,27 @@ const renderProducts = (search = '', category = 'all') => {
         return matchesSearch && matchesCategory;
     });
 
+    // Ordenamiento
+    if (sort === 'price-asc') {
+        filtered.sort((a, b) => a.price - b.price);
+    } else if (sort === 'price-desc') {
+        filtered.sort((a, b) => b.price - a.price);
+    } else if (sort === 'rating') {
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    }
+
+    const countBadge = document.getElementById('catalog-count-badge');
+    if (countBadge) {
+        countBadge.innerHTML = `<i class="fa-solid fa-layer-group"></i> Mostrando <strong>${filtered.length}</strong> piezas exclusivas`;
+    }
+
     if (filtered.length === 0) {
         productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 3rem; color: var(--text-secondary);">No se encontraron productos en el catálogo.</div>`;
         return;
     }
 
     filtered.forEach((p, index) => {
-        const delay = (index % 4) * 0.1;
+        const delay = (index % 4) * 0.08;
         const isWished = wishlist.includes(p.id);
         
         let badgesHtml = '<div class="product-badges">';
@@ -367,7 +446,7 @@ const renderProducts = (search = '', category = 'all') => {
 
         card.innerHTML = `
             ${badgesHtml}
-            <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${p.id})">
+            <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${p.id})" title="Favorito">
                 <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>
             <img src="${p.image}" alt="${p.name}" class="product-image" onclick="openQuickView(${p.id})" style="cursor: pointer;" title="Ver detalle del producto">
@@ -384,7 +463,10 @@ const renderProducts = (search = '', category = 'all') => {
                         ${oldPriceHtml}
                     </div>
                 </div>
-                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:-0.2rem;">
+                    6 cuotas de <strong style="color:var(--gold-light);">${formatPrice(p.price / 6)}</strong> sin interés
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
                     <button class="btn btn-primary add-to-cart-btn" style="flex:1;" onclick="addToCart(${p.id})">
                         <i class="fa-solid fa-cart-plus"></i> Añadir
                     </button>
@@ -394,6 +476,18 @@ const renderProducts = (search = '', category = 'all') => {
                 </div>
             </div>
         `;
+
+        // Efecto spotlight dinámico con el mouse
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(212, 175, 55, 0.08), rgba(255, 255, 255, 0.02) 60%)`;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.background = '';
+        });
+
         productsGrid.appendChild(card);
     });
 };

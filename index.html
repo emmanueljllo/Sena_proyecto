@@ -27,6 +27,23 @@
     <!-- Toast Notifications Container -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- Luxury Ticker / VIP Announcement Bar -->
+    <div class="vip-top-bar">
+        <div class="vip-marquee">
+            <span>✨ EDICIÓN GOLD 2026: DISPONIBILIDAD LIMITADA</span>
+            <span class="marquee-dot">◆</span>
+            <span>🚀 ENVÍO PRIORITARIO ASEGURADO SIN COSTO ADICIONAL</span>
+            <span class="marquee-dot">◆</span>
+            <span>🛡️ CONTINUIDAD TECNOLÓGICA BCP CON 99.99% UPTIME</span>
+            <span class="marquee-dot">◆</span>
+            <span>💳 FINANCIACIÓN EXCLUSIVA HASTA 12 CUOTAS SIN INTERÉS</span>
+            <span class="marquee-dot">◆</span>
+            <span>🔒 GARANTÍA OFICIAL CONFORT CARE DE 2 AÑOS</span>
+            <span class="marquee-dot">◆</span>
+            <span>✨ EDICIÓN GOLD 2026: DISPONIBILIDAD LIMITADA</span>
+        </div>
+    </div>
+
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <a href="index.html" class="nav-brand">
@@ -74,12 +91,56 @@
                 <button class="btn btn-primary" onclick="document.getElementById('catalogo').scrollIntoView({behavior: 'smooth'})">
                     Explorar Catálogo <i class="fa-solid fa-arrow-right"></i>
                 </button>
-                <a href="#ofertas" class="btn btn-outline">
-                    Ver Ofertas 🔥
+                <a href="#catalogo" class="btn btn-outline" onclick="document.getElementById('search-input').value='pro'; document.getElementById('search-input').dispatchEvent(new Event('input'))">
+                    Ver Exclusivos 🔥
                 </a>
+            </div>
+
+            <!-- VIP Countdown Box -->
+            <div class="vip-countdown-box animate-fade-up stagger-3">
+                <span class="countdown-label"><i class="fa-solid fa-clock-rotate-left"></i> Venta Privada VIP termina en:</span>
+                <div class="countdown-digits">
+                    <span class="time-block"><strong id="cd-hours">08</strong><small>Horas</small></span>
+                    <span class="time-colon">:</span>
+                    <span class="time-block"><strong id="cd-mins">42</strong><small>Min</small></span>
+                    <span class="time-colon">:</span>
+                    <span class="time-block"><strong id="cd-secs">19</strong><small>Seg</small></span>
+                </div>
             </div>
         </div>
     </header>
+
+    <!-- 4 Pillars of Luxury -->
+    <section class="luxury-features-section">
+        <div class="feature-card glass-card">
+            <div class="feature-icon"><i class="fa-solid fa-gem"></i></div>
+            <div class="feature-text">
+                <h4>Materiales Nobles</h4>
+                <p>Aleaciones de titanio, oro de 24K y componentes de grado aeroespacial.</p>
+            </div>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="feature-text">
+                <h4>Seguridad BCP Activa</h4>
+                <p>Infraestructura redundante con tolerancia a fallos y cifrado militar.</p>
+            </div>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div class="feature-text">
+                <h4>Entrega Guante Blanco</h4>
+                <p>Empaque premium sellado al vacío con seguro total de transporte.</p>
+            </div>
+        </div>
+        <div class="feature-card glass-card">
+            <div class="feature-icon"><i class="fa-solid fa-crown"></i></div>
+            <div class="feature-text">
+                <h4>Concierge VIP 24/7</h4>
+                <p>Asesoría personalizada y soporte técnico prioritario de por vida.</p>
+            </div>
+        </div>
+    </section>
 
     <!-- Controls Section (Search & Filters) -->
     <section id="catalogo" class="controls-section">
@@ -98,11 +159,72 @@
             <div class="filter-chip" data-filter="Drones">Drones</div>
             <div class="filter-chip" data-filter="Hogar">Hogar Inteligente</div>
         </div>
+
+        <div class="catalog-toolbar">
+            <div class="catalog-count-badge" id="catalog-count-badge">
+                <i class="fa-solid fa-layer-group"></i> Mostrando 13 piezas exclusivas
+            </div>
+            <div class="sort-wrapper">
+                <label for="sort-select"><i class="fa-solid fa-arrow-down-short-wide"></i> Ordenar:</label>
+                <select id="sort-select" class="sort-select" onchange="handleSortChange(this.value)">
+                    <option value="featured">Destacados</option>
+                    <option value="price-asc">Precio: Menor a Mayor</option>
+                    <option value="price-desc">Precio: Mayor a Menor</option>
+                    <option value="rating">Mejor Calificados</option>
+                </select>
+            </div>
+        </div>
     </section>
 
     <!-- Products Grid -->
     <section class="products-container" id="products-grid">
         <!-- Products will be injected via JS -->
+    </section>
+
+    <!-- Testimonios VIP -->
+    <section class="testimonials-section">
+        <div class="section-header text-center">
+            <span class="gold-badge"><i class="fa-solid fa-star"></i> Excelencia Comprobada</span>
+            <h2>Experiencias de <span class="gold-gradient-text">Nuestros Clientes VIP</span></h2>
+            <p style="color:var(--text-secondary); max-width:600px; margin: 0.5rem auto 2rem;">
+                Descubre por qué los entusiastas de la alta tecnología confían en Confort Market.
+            </p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card glass-card">
+                <div class="stars-gold"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                <p class="testimonial-comment">"El ConfortBook Pro X superó todas mis expectativas. El acabado dorado pulido y la velocidad son simplemente sublimes. El despacho llegó en 24 horas perfectamente sellado."</p>
+                <div class="testimonial-user">
+                    <div class="user-avatar" style="background:#d4af37; color:#000;">AR</div>
+                    <div>
+                        <strong>Alejandro R.</strong>
+                        <small>Arquitecto de Soluciones Cloud</small>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card glass-card">
+                <div class="stars-gold"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                <p class="testimonial-comment">"Compré el micrófono y el teclado Titan RGB. La calidad de construcción y la acústica son de estudio profesional. La factura con sello BCP me dio total tranquilidad."</p>
+                <div class="testimonial-user">
+                    <div class="user-avatar" style="background:#e67e22; color:#fff;">VM</div>
+                    <div>
+                        <strong>Valeria M.</strong>
+                        <small>Directora de Producción Sonora</small>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card glass-card">
+                <div class="stars-gold"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                <p class="testimonial-comment">"El servicio al cliente y la atención al detalle son insuperables. Es la primera tienda online donde realmente sientes que estás adquiriendo una pieza de coleccionista."</p>
+                <div class="testimonial-user">
+                    <div class="user-avatar" style="background:#2ed573; color:#000;">DM</div>
+                    <div>
+                        <strong>David M.</strong>
+                        <small>Inversionista Tecnológico</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- Back to Top Button -->
@@ -166,6 +288,25 @@
                     <span class="product-price" id="qv-price" style="font-size: 1.6rem;">$0.00</span>
                     <span class="product-price-old" id="qv-old-price" style="font-size: 1.1rem;"></span>
                 </div>
+                <div class="installment-badge" id="qv-installments">
+                    <i class="fa-solid fa-credit-card"></i> 6 cuotas sin interés con Confort Pay
+                </div>
+
+                <div style="margin: 0.8rem 0 0.3rem;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Acabado Exclusivo:</label>
+                    <div class="editions-selector">
+                        <div class="edition-pill active" onclick="selectEdition(this, 'Obsidian & Gold')">
+                            <i class="fa-solid fa-gem" style="color:var(--gold-primary);"></i> Obsidian & Gold
+                        </div>
+                        <div class="edition-pill" onclick="selectEdition(this, 'Titanium Stealth')">
+                            <i class="fa-solid fa-shield" style="color:#a4b0be;"></i> Titanium Stealth
+                        </div>
+                        <div class="edition-pill" onclick="selectEdition(this, 'Midnight Carbon')">
+                            <i class="fa-solid fa-circle" style="color:#2f3542;"></i> Midnight Carbon
+                        </div>
+                    </div>
+                </div>
+
                 <p id="qv-description" style="color:var(--text-secondary); line-height:1.5; font-size:0.95rem;">
                     Descripción detallada del producto.
                 </p>
@@ -174,14 +315,17 @@
                     <li><i class="fa-solid fa-truck-fast"></i> Envío express nacional garantizado</li>
                     <li><i class="fa-solid fa-lock"></i> Compra respaldada por protocolo de seguridad BCP</li>
                 </ul>
-                <div style="display:flex; align-items:center; gap: 1rem; margin-top: 1rem;">
+                <div style="display:flex; align-items:center; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap;">
                     <div class="qty-selector">
                         <button class="qty-btn" type="button" onclick="changeQvQty(-1)">-</button>
                         <span class="qty-value" id="qv-qty">1</span>
                         <button class="qty-btn" type="button" onclick="changeQvQty(1)">+</button>
                     </div>
                     <button class="btn btn-primary" id="qv-add-cart-btn" style="flex:1;">
-                        <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                        <i class="fa-solid fa-cart-plus"></i> Añadir
+                    </button>
+                    <button class="btn btn-express" id="qv-buy-now-btn" style="flex:1; padding:0.8rem 1rem;">
+                        <i class="fa-solid fa-bolt"></i> Comprar Ahora
                     </button>
                 </div>
             </div>
