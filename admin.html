@@ -11,75 +11,49 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="auth-guard.js"></script>
 </head>
-<body>
-    <!-- Toast Notifications Container -->
+<body class="admin-page">
     <div class="toast-container" id="toast-container"></div>
 
-    <!-- Navbar -->
-    <nav class="navbar" id="navbar">
-        <a href="index.html" class="nav-brand">
-            <img src="assets/logo.png" alt="Confort Market" style="height: 45px;">
-        </a>
-        <div style="display:flex; align-items:center; gap: 1rem;">
-            <a href="index.html" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size:0.85rem;">
-                <i class="fa-solid fa-store"></i> Ver Tienda
-            </a>
-            <a href="dashboard.html" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size:0.85rem;">
-                <i class="fa-solid fa-user"></i> Mi Cuenta
-            </a>
-            <button onclick="logout(event)" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size:0.85rem; background:#ff4757; border-color:#ff4757;">
-                <i class="fa-solid fa-right-from-bracket"></i> Salir
-            </button>
+    <nav class="navbar admin-navbar" id="navbar">
+        <a href="index.html" class="nav-brand"><img src="assets/logo.png" alt="Confort Market"></a>
+        <div class="admin-navbar-actions">
+            <a href="index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Ver tienda</a>
+            <a href="dashboard.html" class="btn btn-outline"><i class="fa-solid fa-user"></i> Mi cuenta</a>
+            <button type="button" class="btn btn-primary admin-logout" onclick="logout(event)"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
         </div>
     </nav>
 
-    <!-- Admin Layout -->
-    <div class="dashboard-layout">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+    <div class="dashboard-layout admin-layout">
+        <aside class="sidebar admin-sidebar">
             <div class="user-profile">
-                <div class="avatar" style="background:linear-gradient(135deg, #d4af37, #aa7c11); color:#000;">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
+                <div class="avatar admin-avatar"><i class="fa-solid fa-shield-halved"></i></div>
                 <div class="user-info">
                     <h3 id="admin-username-display">Administrador</h3>
-                    <p>admin@confortmarket.com</p>
-                    <span class="user-role-badge" style="background:rgba(212,175,55,0.2); color:var(--gold-primary);">Oficial BCP</span>
+                    <p id="admin-email-display">admin@confortmarket.com</p>
+                    <span class="user-role-badge">Oficial BCP</span>
                 </div>
             </div>
 
-            <nav class="sidebar-nav">
-                <a href="#" class="sidebar-link active" data-admin-tab="tab-admin-bcp">
-                    <i class="fa-solid fa-server"></i> Centro de Mando BCP
-                </a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-crud">
-                    <i class="fa-solid fa-boxes-stacked"></i> Catálogo (CRUD)
-                </a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-orders">
-                    <i class="fa-solid fa-receipt"></i> Gestión de Pedidos
-                </a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-logs">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Auditoría y Logs
-                </a>
+            <nav class="sidebar-nav admin-sidebar-nav" aria-label="Menú administrativo">
+                <a href="#" class="sidebar-link active" data-admin-tab="tab-admin-bcp"><i class="fa-solid fa-server"></i> Centro de mando</a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-crud"><i class="fa-solid fa-boxes-stacked"></i> Catálogo</a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-orders"><i class="fa-solid fa-receipt"></i> Pedidos</a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-logs"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría</a>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
-        <main class="dashboard-main" style="padding: 2rem;">
+        <main class="dashboard-main admin-main">
             <!-- Tab 1: Centro de Mando BCP -->
             <div id="tab-admin-bcp" class="admin-tab-content active">
-                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <div class="admin-page-heading">
                     <div>
-                        <h2>Centro de Mando <span class="gold-text">BCP & DRP</span></h2>
-                        <p style="color:var(--text-secondary);">Supervisión de Continuidad de Negocio y Recuperación ante Desastres.</p>
+                        <span class="admin-eyebrow">SISTEMA DE CONTINUIDAD</span>
+                        <h2>Centro de mando <span class="gold-text">BCP & DRP</span></h2>
+                        <p>Supervisión de continuidad de negocio y recuperación ante desastres.</p>
                     </div>
-                    <div style="display:flex; gap:0.8rem; flex-wrap:wrap;">
-                        <button type="button" class="btn btn-outline" onclick="generateBcpReportPDF()">
-                            <i class="fa-solid fa-file-pdf"></i> Descargar Informe BCP
-                        </button>
-                        <button type="button" class="btn btn-primary" id="btn-toggle-failover" onclick="toggleBcpFailover()">
-                            <i class="fa-solid fa-bolt"></i> Simular Contingencia
-                        </button>
+                    <div class="admin-actions">
+                        <button type="button" class="btn btn-outline" onclick="generateBcpReportPDF()"><i class="fa-solid fa-file-pdf"></i> Informe BCP</button>
+                        <button type="button" class="btn btn-primary" id="btn-toggle-failover" onclick="toggleBcpFailover()"><i class="fa-solid fa-bolt"></i> Simular contigencia</button>
                     </div>
                 </div>
 
@@ -169,19 +143,22 @@
 
             <!-- Tab 2: Catálogo CRUD -->
             <div id="tab-admin-crud" class="admin-tab-content" style="display:none;">
-                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <div class="admin-page-heading">
                     <div>
-                        <h2>Gestión de <span class="gold-text">Catálogo (CRUD)</span></h2>
-                        <p style="color:var(--text-secondary);">Crea, edita o elimina productos del inventario de Confort Market.</p>
+                        <span class="admin-eyebrow">GESTIÓN DEL INVENTARIO</span>
+                        <h2>Catálogo <span class="gold-text">CRUD</span></h2>
+                        <p>Crea, edita o elimina productos del inventario.</p>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="openProductModal()">
-                        <i class="fa-solid fa-plus"></i> Nuevo Producto
-                    </button>
+                    <button type="button" class="btn btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus"></i> Nuevo producto</button>
                 </div>
 
-                <div class="glass-card" style="padding: 1.5rem;">
+                <div class="glass-card admin-table-card">
+                    <div class="admin-table-toolbar">
+                        <div><strong>Inventario actual</strong><span id="admin-product-count">0 productos</span></div>
+                        <span class="admin-live"><i class="fa-solid fa-circle"></i> Datos locales</span>
+                    </div>
                     <div class="orders-table-container">
-                        <table class="orders-table">
+                        <table class="orders-table admin-table">
                             <thead>
                                 <tr>
                                     <th>Imagen</th>
@@ -193,7 +170,7 @@
                                 </tr>
                             </thead>
                             <tbody id="admin-products-tbody">
-                                <!-- JS inyecta filas de productos aquí -->
+                                <tr><td colspan="6" class="admin-empty">Cargando catálogo…</td></tr>
                             </tbody>
                         </table>
                     </div>

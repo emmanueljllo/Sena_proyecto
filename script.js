@@ -379,10 +379,22 @@ const initIndexPage = () => {
 
     // Búsqueda
     const searchInput = document.getElementById('search-input');
+    const clearSearch = document.getElementById('clear-search');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const activeFilter = document.querySelector('.filter-chip.active');
-            renderProducts(e.target.value, activeFilter ? activeFilter.dataset.filter : 'all', currentSort);
+            const value = e.target.value.trim();
+            if (clearSearch) clearSearch.hidden = value.length === 0;
+            renderProducts(value, activeFilter ? activeFilter.dataset.filter : 'all', currentSort);
+        });
+    }
+    if (clearSearch) {
+        clearSearch.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            }
         });
     }
 
@@ -993,8 +1005,15 @@ window.runDrpTest = (serviceName) => {
 // --- CRUD de Catálogo en Admin ---
 window.renderAdminProducts = () => {
     const tbody = document.getElementById('admin-products-tbody');
+    const count = document.getElementById('admin-product-count');
     if (!tbody) return;
     tbody.innerHTML = '';
+    if (count) count.textContent = `${products.length} producto${products.length === 1 ? '' : 's'}`;
+
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">No hay productos en el catálogo.</td></tr>';
+        return;
+    }
 
     products.forEach(p => {
         const tr = document.createElement('tr');
@@ -1344,6 +1363,17 @@ const renderAdminPanel = () => {
 };
 
 // --- Auth Forms Validation ---
+const setFieldError = (field, message) => {
+    const input = document.getElementById(field);
+    const error = document.getElementById(`${field}-error`);
+    if (!input || !error) return;
+    input.classList.toggle('invalid', Boolean(message));
+    input.setAttribute('aria-invalid', String(Boolean(message)));
+    error.textContent = message;
+};
+
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const initAuthPages = () => {
     const passInput = document.getElementById('password');
     const strengthBar = document.getElementById('strength-bar');
@@ -1378,24 +1408,37 @@ const initAuthPages = () => {
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
-            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
             const confirm = document.getElementById('confirm-password').value;
-            const adminCode = document.getElementById('admin-code') ? document.getElementById('admin-code').value : '';
+            const roleSelect = document.getElementById('role');
+            const adminCode = document.getElementById('admin-code') ? document.getElementById('admin-code').value.trim() : '';
+            const terms = document.getElementById('terms');
+            let valid = true;
 
-            if (password !== confirm) {
-                showToast('Las contraseñas no coinciden', 'error');
+            setFieldError('username', username.length >= 3 ? '' : 'El nombre debe tener al menos 3 caracteres.');
+            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electrónico válido.');
+            setFieldError('password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.');
+            setFieldError('confirm-password', password === confirm ? '' : 'Las contraseñas no coinciden.');
+            setFieldError('admin-code', roleSelect.value === 'admin' && adminCode !== ADMIN_SECRET_CODE ? 'Código administrador incorrecto.' : '');
+            setFieldError('terms', terms && terms.checked ? '' : 'Debes aceptar los términos y la política de privacidad.');
+            valid = username.length >= 3 && validateEmail(email) && password.length >= 8 && password === confirm && (!roleSelect || roleSelect.value !== 'admin' || adminCode === ADMIN_SECRET_CODE) && (!terms || terms.checked);
+
+            if (!valid) {
+                showToast('Revisa los campos mencionados', 'error');
+                registerForm.querySelector('.invalid')?.focus();
                 return;
             }
 
             const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            if (users.find(u => u.email === email)) {
+            if (users.find(u => u.email.toLowerCase() === email)) {
+                setFieldError('email', 'Este correo electrónico ya está registrado.');
                 showToast('El email ya está registrado', 'error');
                 return;
             }
 
-            const role = email.toLowerCase().includes('admin') || adminCode === ADMIN_SECRET_CODE ? 'admin' : 'cliente';
+            const role = roleSelect.value === 'admin' ? 'admin' : 'cliente';
             users.push({ username, email, password, role });
             localStorage.setItem('confort_users', JSON.stringify(users));
             showToast('Registro exitoso. Inicia sesión.');
@@ -1407,23 +1450,21 @@ const initAuthPages = () => {
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
-            
+            let valid = true;
+            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electrónico válido.');
+            setFieldError('password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.');
+            valid = validateEmail(email) && password.length >= 8;
+            if (!valid) { showToast('Revisa tus credenciales', 'error'); return; }
+
             const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            const user = users.find(u => u.email === email && u.password === password);
-            
+            const user = users.find(u => u.email.toLowerCase() === email && u.password === password);
             if (user) {
                 localStorage.setItem('confort_current_user', JSON.stringify({ email: user.email, username: user.username, role: user.role || 'cliente' }));
                 localStorage.setItem('confort_user_logged_in', 'true');
                 showToast('Inicio de sesión exitoso');
-                setTimeout(() => {
-                    if (user.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'dashboard.html';
-                    }
-                }, 1000);
+                setTimeout(() => window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html', 1000);
             } else {
                 showToast('Credenciales incorrectas', 'error');
             }

@@ -143,34 +143,39 @@
     </section>
 
     <!-- Controls Section (Search & Filters) -->
-    <section id="catalogo" class="controls-section">
-        <h2 class="animate-fade-up" style="font-size: 2rem; margin-bottom: 1rem;">Nuestro <span class="gold-text">Catálogo</span></h2>
-        
-        <div class="search-bar animate-fade-up stagger-1">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="search-input" placeholder="Buscar productos por nombre o categoría...">
+    <section id="catalogo" class="controls-section catalog-section">
+        <div class="catalog-heading animate-fade-up">
+            <div>
+                <span class="gold-badge"><i class="fa-solid fa-star"></i> Colección exclusiva</span>
+                <h2>Nuestro <span class="gold-text">Catálogo</span></h2>
+                <p>Descubre piezas premium seleccionadas para tu rutina diaria.</p>
+            </div>
         </div>
 
-        <div class="filter-bar animate-fade-up stagger-2" id="filter-bar">
-            <div class="filter-chip active" data-filter="all">Todos</div>
-            <div class="filter-chip" data-filter="Computadores">Computadores</div>
-            <div class="filter-chip" data-filter="Audio">Audio</div>
-            <div class="filter-chip" data-filter="Accesorios">Accesorios</div>
-            <div class="filter-chip" data-filter="Drones">Drones</div>
-            <div class="filter-chip" data-filter="Hogar">Hogar Inteligente</div>
+        <div class="search-bar animate-fade-up stagger-1">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-input" placeholder="Buscar por producto o categoría..." autocomplete="off">
+            <button type="button" id="clear-search" class="clear-search" aria-label="Limpiar búsqueda" hidden><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="filter-bar animate-fade-up stagger-2" id="filter-bar" aria-label="Filtros de categoría">
+            <button type="button" class="filter-chip active" data-filter="all">Todos</button>
+            <button type="button" class="filter-chip" data-filter="Computadores">Computadores</button>
+            <button type="button" class="filter-chip" data-filter="Audio">Audio</button>
+            <button type="button" class="filter-chip" data-filter="Accesorios">Accesorios</button>
+            <button type="button" class="filter-chip" data-filter="Drones">Drones</button>
+            <button type="button" class="filter-chip" data-filter="Hogar">Hogar inteligente</button>
         </div>
 
         <div class="catalog-toolbar">
-            <div class="catalog-count-badge" id="catalog-count-badge">
-                <i class="fa-solid fa-layer-group"></i> Mostrando 13 piezas exclusivas
-            </div>
+            <div class="catalog-count-badge" id="catalog-count-badge"><i class="fa-solid fa-layer-group"></i> Mostrando <strong>13</strong> piezas exclusivas</div>
             <div class="sort-wrapper">
                 <label for="sort-select"><i class="fa-solid fa-arrow-down-short-wide"></i> Ordenar:</label>
                 <select id="sort-select" class="sort-select" onchange="handleSortChange(this.value)">
                     <option value="featured">Destacados</option>
-                    <option value="price-asc">Precio: Menor a Mayor</option>
-                    <option value="price-desc">Precio: Mayor a Menor</option>
-                    <option value="rating">Mejor Calificados</option>
+                    <option value="price-asc">Precio: Menor a mayor</option>
+                    <option value="price-desc">Precio: Mayor a menor</option>
+                    <option value="rating">Mejor calificados</option>
                 </select>
             </div>
         </div>
