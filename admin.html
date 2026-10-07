@@ -36,6 +36,7 @@
 
             <nav class="sidebar-nav admin-sidebar-nav" aria-label="Menú administrativo">
                 <a href="#" class="sidebar-link active" data-admin-tab="tab-admin-bcp"><i class="fa-solid fa-server"></i> Centro de mando</a>
+                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-insights"><i class="fa-solid fa-chart-line"></i> Inteligencia comercial</a>
                 <a href="#" class="sidebar-link" data-admin-tab="tab-admin-crud"><i class="fa-solid fa-boxes-stacked"></i> Catálogo</a>
                 <a href="#" class="sidebar-link" data-admin-tab="tab-admin-orders"><i class="fa-solid fa-receipt"></i> Pedidos</a>
                 <a href="#" class="sidebar-link" data-admin-tab="tab-admin-logs"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría</a>
@@ -139,6 +140,96 @@
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <!-- Executive ecommerce overview -->
+            <div id="tab-admin-insights" class="admin-tab-content" style="display:none;">
+                <div class="admin-page-heading">
+                    <div>
+                        <span class="admin-eyebrow">INTELIGENCIA COMERCIAL</span>
+                        <h2>Pulso del <span class="gold-text">e-commerce</span></h2>
+                        <p>Ventas recientes, demanda y prioridades para la operación.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline" data-admin-open-orders>
+                        <i class="fa-solid fa-list-check"></i> Gestionar pedidos
+                    </button>
+                </div>
+
+                <div class="admin-data-scope">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Indicadores calculados con los pedidos guardados en este navegador; todavía no representan datos centralizados entre dispositivos.
+                </div>
+
+                <div class="stat-grid admin-insight-kpis">
+                    <article class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div class="stat-value" id="insight-revenue">$0.00</div>
+                        <div class="stat-label">Ventas registradas · 30 días</div>
+                    </article>
+                    <article class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+                        <div class="stat-value" id="insight-orders">0</div>
+                        <div class="stat-label">Pedidos · 30 días</div>
+                    </article>
+                    <article class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                        <div class="stat-value" id="insight-average">$0.00</div>
+                        <div class="stat-label">Ticket promedio · 30 días</div>
+                    </article>
+                    <article class="glass-card stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="stat-value" id="insight-pending">0</div>
+                        <div class="stat-label">Pedidos por preparar</div>
+                    </article>
+                </div>
+
+                <div class="admin-insights-grid">
+                    <section class="glass-card admin-insight-panel">
+                        <div class="admin-insight-panel-heading">
+                            <div>
+                                <span class="admin-eyebrow">ACTIVIDAD</span>
+                                <h3>Ventas de los últimos 7 días</h3>
+                            </div>
+                            <i class="fa-solid fa-chart-column" aria-hidden="true"></i>
+                        </div>
+                        <div class="admin-sales-chart" id="insight-sales-chart" role="img" aria-label="Ventas por día en los últimos siete días"></div>
+                    </section>
+
+                    <section class="glass-card admin-insight-panel">
+                        <div class="admin-insight-panel-heading">
+                            <div>
+                                <span class="admin-eyebrow">DEMANDA</span>
+                                <h3>Productos más vendidos</h3>
+                            </div>
+                            <i class="fa-solid fa-ranking-star" aria-hidden="true"></i>
+                        </div>
+                        <ol class="admin-top-products" id="insight-top-products"></ol>
+                    </section>
+                </div>
+
+                <section class="glass-card admin-insight-panel admin-priority-panel">
+                    <div class="admin-insight-panel-heading">
+                        <div>
+                            <span class="admin-eyebrow">CENTRO DE ACCIÓN</span>
+                            <h3>Pedidos que requieren atención</h3>
+                        </div>
+                        <span class="admin-priority-count" id="insight-overdue-count">0 atrasados</span>
+                    </div>
+                    <div class="orders-table-container">
+                        <table class="orders-table admin-table admin-priority-table">
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Cliente</th>
+                                    <th>Antigüedad</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="insight-priority-orders"></tbody>
+                        </table>
+                    </div>
+                    <p class="admin-insight-footnote">Se priorizan primero los pedidos en estado “Procesando” con más de 48 horas.</p>
+                </section>
             </div>
 
             <!-- Tab 2: Catálogo CRUD -->
@@ -301,7 +392,13 @@
             initAdminTabs();
             renderAdminProducts();
             renderAdminOrders();
+            renderAdminInsights();
             renderAdminLogs();
+            document.querySelectorAll('[data-admin-open-orders]').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.querySelector('[data-admin-tab="tab-admin-orders"]').click();
+                });
+            });
         });
 
         function initAdminTabs() {

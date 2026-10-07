@@ -1129,20 +1129,180 @@ window.deleteProduct = (id) => {
 };
 
 // --- Gestión de Pedidos y Logs en Admin ---
+const getAllAdminOrders = () => {
+    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+    return users.flatMap(user => {
+        const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${user.email}`)) || [];
+        return userOrders.map(order => ({
+            ...order,
+            userEmail: user.email,
+            userName: user.username || user.email
+        }));
+    });
+};
+
+window.renderAdminInsights = () => {
+    const chart = document.getElementById('insight-sales-chart');
+    if (!chart) return;
+
+    const orders = getAllAdminOrders();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthWindowStart = new Date(today);
+    monthWindowStart.setDate(monthWindowStart.getDate() - 29);
+    const recentOrders = orders.filter(order => {
+        const orderDate = new Date(order.date);
+        return !Number.isNaN(orderDate.getTime()) && orderDate >= monthWindowStart && orderDate <= now;
+    });
+    const recentRevenue = recentOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    const pendingOrders = orders.filter(order => order.status === 'Procesando');
+    const overdueOrders = pendingOrders.filter(order => {
+        const orderDate = new Date(order.date);
+        return !Number.isNaN(orderDate.getTime()) && now - orderDate > 48 * 60 * 60 * 1000;
+    });
+
+    document.getElementById('insight-revenue').textContent = formatPrice(recentRevenue);
+    document.getElementById('insight-orders').textContent = recentOrders.length;
+    document.getElementById('insight-average').textContent = formatPrice(
+        recentOrders.length ? recentRevenue / recentOrders.length : 0
+    );
+    document.getElementById('insight-pending').textContent = pendingOrders.length;
+
+    const firstDay = new Date(today);
+    firstDay.setDate(firstDay.getDate() - 6);
+    const dailySales = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(firstDay);
+        date.setDate(firstDay.getDate() + index);
+        return { date, total: 0 };
+    });
+    orders.forEach(order => {
+        const orderDate = new Date(order.date);
+        if (Number.isNaN(orderDate.getTime()) || orderDate > now) return;
+        const dayIndex = Math.floor((new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate()) - firstDay) / 86400000);
+        if (dayIndex >= 0 && dayIndex < dailySales.length) {
+            dailySales[dayIndex].total += Number(order.total) || 0;
+        }
+    });
+
+    const maxDailySales = Math.max(...dailySales.map(day => day.total), 1);
+    chart.replaceChildren();
+    dailySales.forEach(day => {
+        const column = document.createElement('div');
+        column.className = 'admin-sales-day';
+        column.title = `${day.date.toLocaleDateString('es-CO')}: ${formatPrice(day.total)}`;
+
+        const amount = document.createElement('span');
+        amount.className = 'admin-sales-amount';
+        amount.textContent = day.total ? formatPrice(day.total) : '$0';
+
+        const bar = document.createElement('div');
+        bar.className = 'admin-sales-bar';
+        bar.style.height = `${day.total ? Math.max(6, (day.total / maxDailySales) * 100) : 3}%`;
+        bar.setAttribute('aria-hidden', 'true');
+
+        const label = document.createElement('span');
+        label.className = 'admin-sales-label';
+        label.textContent = day.date.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '');
+
+        column.append(amount, bar, label);
+        chart.appendChild(column);
+    });
+
+    const productSales = new Map();
+    orders.forEach(order => {
+        (Array.isArray(order.items) ? order.items : []).forEach(item => {
+            const name = item.name || 'Producto sin nombre';
+            const quantity = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+            productSales.set(name, (productSales.get(name) || 0) + quantity);
+        });
+    });
+    const topProducts = [...productSales.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const productsList = document.getElementById('insight-top-products');
+    productsList.replaceChildren();
+    if (topProducts.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'admin-insight-empty';
+        empty.textContent = 'Aún no hay ventas para identificar productos destacados.';
+        productsList.appendChild(empty);
+    } else {
+        const maxProductSales = topProducts[0][1];
+        topProducts.forEach(([name, quantity], index) => {
+            const item = document.createElement('li');
+            item.className = 'admin-top-product';
+            const rank = document.createElement('span');
+            rank.className = 'admin-product-rank';
+            rank.textContent = String(index + 1).padStart(2, '0');
+
+            const details = document.createElement('div');
+            details.className = 'admin-top-product-details';
+            const productName = document.createElement('strong');
+            productName.textContent = name;
+            const track = document.createElement('span');
+            track.className = 'admin-product-track';
+            const progress = document.createElement('span');
+            progress.style.width = `${(quantity / maxProductSales) * 100}%`;
+            track.appendChild(progress);
+            details.append(productName, track);
+
+            const units = document.createElement('span');
+            units.className = 'admin-product-units';
+            units.textContent = `${quantity} un.`;
+            item.append(rank, details, units);
+            productsList.appendChild(item);
+        });
+    }
+
+    const overdueCount = document.getElementById('insight-overdue-count');
+    overdueCount.textContent = `${overdueOrders.length} atrasado${overdueOrders.length === 1 ? '' : 's'}`;
+    overdueCount.classList.toggle('has-overdue', overdueOrders.length > 0);
+
+    const priorityOrders = pendingOrders
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .slice(0, 5);
+    const priorityTable = document.getElementById('insight-priority-orders');
+    priorityTable.replaceChildren();
+    if (priorityOrders.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.className = 'admin-insight-empty';
+        cell.textContent = 'No hay pedidos pendientes de preparación.';
+        row.appendChild(cell);
+        priorityTable.appendChild(row);
+    } else {
+        priorityOrders.forEach(order => {
+            const row = document.createElement('tr');
+            const orderCell = document.createElement('td');
+            const orderId = document.createElement('strong');
+            orderId.textContent = order.id || 'Pedido';
+            orderCell.appendChild(orderId);
+
+            const customerCell = document.createElement('td');
+            customerCell.textContent = order.userName;
+
+            const ageCell = document.createElement('td');
+            const orderDate = new Date(order.date);
+            ageCell.textContent = Number.isNaN(orderDate.getTime())
+                ? 'Fecha no válida'
+                : `${Math.max(0, Math.floor((now - orderDate) / (60 * 60 * 1000)))} h`;
+            if (!Number.isNaN(orderDate.getTime()) && now - orderDate > 48 * 60 * 60 * 1000) {
+                ageCell.className = 'admin-order-overdue';
+            }
+
+            const totalCell = document.createElement('td');
+            totalCell.textContent = formatPrice(Number(order.total) || 0);
+            row.append(orderCell, customerCell, ageCell, totalCell);
+            priorityTable.appendChild(row);
+        });
+    }
+};
+
 window.renderAdminOrders = () => {
     const tbody = document.getElementById('admin-orders-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-    let allOrders = [];
-
-    users.forEach(u => {
-        const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
-        userOrders.forEach(o => {
-            allOrders.push({ ...o, userEmail: u.email, userName: u.username || u.email });
-        });
-    });
+    const allOrders = getAllAdminOrders();
 
     if (allOrders.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-secondary); padding:2rem;">No hay pedidos registrados en la plataforma.</td></tr>';
@@ -1180,6 +1340,7 @@ window.updateOrderStatus = (email, orderId, newStatus) => {
     if (ord) {
         ord.status = newStatus;
         localStorage.setItem(key, JSON.stringify(orders));
+        renderAdminInsights();
         showToast(`Pedido ${orderId} actualizado a ${newStatus}`);
     }
 };
@@ -1208,7 +1369,7 @@ window.renderAdminLogs = () => {
 
 // --- Lógica de Dashboard ---
 const initDashboardPage = () => {
-    if (!document.querySelector('.dashboard-main')) return;
+    if (!document.getElementById('user-name-display')) return;
 
     if (currentUser) {
         document.getElementById('user-name-display').textContent = currentUser.username || currentUser.email;
