@@ -54,36 +54,20 @@
                         <div class="form-group">
                             <label for="password">Contraseña</label>
                             <i class="fa-solid fa-lock form-icon"></i>
-                            <input type="password" id="password" name="password" class="form-control" autocomplete="new-password" placeholder="Mínimo 8 caracteres" minlength="8" required>
+                            <input type="password" id="password" name="password" class="form-control" autocomplete="new-password" placeholder="8 a 72 bytes" minlength="8" maxlength="72" required>
                             <i class="fa-regular fa-eye-slash password-toggle" aria-label="Mostrar contraseña"></i>
                             <small class="field-error" id="password-error"></small>
                         </div>
                         <div class="form-group">
                             <label for="confirm-password">Confirmar contraseña</label>
                             <i class="fa-solid fa-shield-check form-icon"></i>
-                            <input type="password" id="confirm-password" name="confirm-password" class="form-control" autocomplete="new-password" placeholder="Repite la contraseña" minlength="8" required>
+                            <input type="password" id="confirm-password" name="confirm-password" class="form-control" autocomplete="new-password" placeholder="Repite la contraseña" minlength="8" maxlength="72" required>
                             <small class="field-error" id="confirm-password-error"></small>
                         </div>
                     </div>
 
                     <div class="password-strength" aria-label="Fuerza de la contraseña">
                         <div class="strength-bar" id="strength-bar"></div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="role">Tipo de cuenta</label>
-                            <select id="role" class="form-control select-control">
-                                <option value="cliente">Cliente</option>
-                                <option value="admin">Administrador</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="admin-code-group" style="display:none;">
-                            <label for="admin-code">Código administrador</label>
-                            <i class="fa-solid fa-key form-icon"></i>
-                            <input type="text" id="admin-code" name="admin-code" class="form-control" placeholder="Código autorizado" autocomplete="off">
-                            <small class="field-error" id="admin-code-error"></small>
-                        </div>
                     </div>
 
                     <label class="check-control terms-control">
@@ -95,7 +79,17 @@
                         <span>Crear cuenta</span><i class="fa-solid fa-user-plus"></i>
                     </button>
                 </form>
-
+                <form id="register-otp-form" novalidate hidden>
+                    <p class="auth-otp-message">Enviamos un código de seis dígitos a tu correo para verificar la cuenta.</p>
+                    <div class="form-group">
+                        <label for="register-otp-code">Código de verificación</label>
+                        <i class="fa-solid fa-shield-halved form-icon"></i>
+                        <input type="text" id="register-otp-code" class="form-control" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>
+                        <small class="field-error" id="register-otp-error"></small>
+                    </div>
+                    <button type="submit" class="btn btn-primary auth-submit"><span>Verificar correo</span><i class="fa-solid fa-arrow-right"></i></button>
+                    <button type="button" class="btn btn-outline auth-resend" id="register-otp-resend">Reenviar código</button>
+                </form>
                 <div class="auth-footer">¿Ya tienes una cuenta? <a href="login.html">Inicia sesión</a></div>
             </div>
         </section>
