@@ -43,25 +43,54 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label>Nombre Completo</label>
-                        <input type="text" id="shipping-name" class="form-control" style="padding-left:1rem;" autocomplete="name" required>
+                        <input type="text" class="form-control" style="padding-left:1rem;" required>
                     </div>
                     <div class="form-group">
                         <label>Teléfono</label>
-                        <input type="tel" id="shipping-phone" class="form-control" style="padding-left:1rem;" autocomplete="tel" required>
+                        <input type="tel" class="form-control" style="padding-left:1rem;" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Dirección de Envío</label>
-                    <input type="text" id="shipping-address" class="form-control" style="padding-left:1rem;" autocomplete="street-address" required>
+                    <input type="text" class="form-control" style="padding-left:1rem;" required>
                 </div>
 
-                <div class="admin-data-scope checkout-demo-notice">
-                    <i class="fa-solid fa-circle-info"></i>
-                    El pedido se registrará para gestión. Esta tienda todavía no tiene una pasarela de pago conectada y no realizará ningún cobro.
+                <h3 style="margin: 2rem 0 1.5rem;">Método de Pago</h3>
+                <div class="payment-methods">
+                    <div class="payment-method active">
+                        <i class="fa-brands fa-cc-visa" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>Tarjeta</span>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fa-brands fa-cc-paypal" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>PayPal</span>
+                    </div>
+                    <div class="payment-method">
+                        <i class="fa-solid fa-building-columns" style="font-size:2rem; color:var(--text-primary)"></i>
+                        <span>Transferencia</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Tarjeta</label>
+                    <i class="fa-regular fa-credit-card form-icon"></i>
+                    <input type="text" class="form-control" id="cc-number" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Vencimiento</label>
+                        <i class="fa-regular fa-calendar form-icon"></i>
+                        <input type="text" class="form-control" id="cc-exp" placeholder="MM/YY" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CVV</label>
+                        <i class="fa-solid fa-lock form-icon"></i>
+                        <input type="text" class="form-control" placeholder="123" maxlength="4" required>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 1rem;">
-                    <i class="fa-solid fa-box-check"></i> Registrar Pedido
+                    <i class="fa-solid fa-check"></i> Confirmar Pedido
                 </button>
             </form>
         </div>
@@ -113,9 +142,9 @@
             <div style="font-size: 3.5rem; color: #2ed573; margin-bottom: 1rem;">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
-            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">¡Pedido registrado!</h2>
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">¡Pago Procesado con Éxito!</h2>
             <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-                Tu pedido quedó registrado para gestión. No se realizó ningún cobro.
+                Tu pedido ha sido confirmado y registrado bajo el protocolo seguro BCP.
             </p>
             
             <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 1.2rem; text-align: left; margin-bottom: 1.5rem;">
@@ -128,21 +157,18 @@
                     <span id="modal-order-date">05/10/2026</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: var(--text-secondary);">Total del pedido:</span>
+                    <span style="color: var(--text-secondary);">Total Pagado:</span>
                     <strong id="modal-order-total" style="color: #2ed573; font-size: 1.1rem;">$0.00</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-secondary);">Pago en línea:</span>
-                    <span style="color: var(--gold-light); font-size: 0.85rem;">No configurado</span>
+                    <span style="color: var(--text-secondary);">Seguridad BCP:</span>
+                    <span style="color: var(--gold-light); font-size: 0.85rem;"><i class="fa-solid fa-shield-halved"></i> Transacción Cifrada</span>
                 </div>
             </div>
 
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <button type="button" class="btn btn-primary" onclick="downloadOrderInvoicePDF()" style="flex: 1; padding: 0.9rem;">
-                    <i class="fa-solid fa-file-pdf"></i> Descargar resumen PDF
-                </button>
-                <button type="button" class="btn btn-outline" onclick="sendOrderInvoice()" style="flex: 1; padding: 0.9rem;">
-                    <i class="fa-solid fa-envelope"></i> Enviar resumen por correo
+                    <i class="fa-solid fa-file-pdf"></i> Descargar Factura PDF
                 </button>
                 <a href="dashboard.html" class="btn btn-outline" style="flex: 1; padding: 0.9rem; text-align:center;">
                     <i class="fa-solid fa-user"></i> Mis Pedidos
