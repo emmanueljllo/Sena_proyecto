@@ -57,6 +57,14 @@ INSERT IGNORE INTO products (name, description, price, stock, image_url) VALUES
 ('Tablet ArtPad 12"', 'Tablet profesional para diseño y productividad con lápiz óptico.', 250.00, 45, 'assets/premium_tablet.jpg'),
 ('Altavoz Smart Echo', 'Altavoz inteligente con sonido envolvente y asistente de voz.', 99.00, 60, 'assets/premium_speaker.jpg');
 
+INSERT IGNORE INTO products (name, description, price, stock, image_url) VALUES
+('AuraPhone Ultra', 'Smartphone premium con pantalla OLED y acabado de titanio.', 799.00, 50, 'assets/premium_phone.jpg'),
+('Halo Speaker Mini', 'Altavoz compacto inteligente con sonido envolvente.', 129.00, 60, 'assets/premium_speaker_mini.jpg'),
+('Titan Keys 75', 'Teclado mecanico compacto con iluminacion RGB personalizable.', 145.00, 40, 'assets/premium_keyboard_75.jpg'),
+('Pulse Sound Pro', 'Audifonos inalambricos con cancelacion de ruido y estuche de carga.', 229.00, 55, 'assets/premium_earbuds.jpg'),
+('VisionCam 4K Pro', 'Camara web 4K con enfoque automatico para streaming y reuniones.', 179.00, 35, 'assets/premium_webcam.jpg'),
+('LumiCast Pocket', 'Proyector portatil Full HD para entretenimiento en casa.', 349.00, 25, 'assets/premium_projector.jpg');
+
 INSERT IGNORE INTO bcp_logs (event_type, status, description) VALUES
 ('backup_local', 'success', 'Copia de seguridad local completada correctamente.'),
 ('backup_offline', 'success', 'Disco externo desconectado de la red según el protocolo BCP.'),
@@ -74,4 +82,3 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
-

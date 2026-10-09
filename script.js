@@ -12,11 +12,29 @@ const defaultProducts = [
     { id: 10, name: "Gafas Reality Max", price: 599.00, oldPrice: null, category: "Drones", rating: 4.6, reviews: 34, image: "assets/premium_glasses.jpg", badge: "new" },
     { id: 11, name: "Drone SkyEye Pro", price: 899.00, oldPrice: 999.00, category: "Drones", rating: 4.8, reviews: 42, image: "assets/premium_drone.jpg", badge: "sale" },
     { id: 12, name: "Tablet ArtPad 12\"", price: 250.00, oldPrice: null, category: "Computadores", rating: 4.5, reviews: 76, image: "assets/premium_tablet.jpg", badge: null },
-    { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "assets/premium_speaker.jpg", badge: null }
+    { id: 13, name: "Altavoz Smart Echo", price: 99.00, oldPrice: null, category: "Hogar", rating: 4.3, reviews: 201, image: "assets/premium_speaker.jpg", badge: null },
+    { id: 14, name: "AuraPhone Ultra", price: 799.00, oldPrice: 899.00, category: "Accesorios", rating: 4.9, reviews: 164, image: "assets/premium_phone.jpg", badge: "new" },
+    { id: 15, name: "Halo Speaker Mini", price: 129.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 93, image: "assets/premium_speaker_mini.jpg", badge: "new" },
+    { id: 16, name: "Titan Keys 75", price: 145.00, oldPrice: 179.00, category: "Accesorios", rating: 4.8, reviews: 118, image: "assets/premium_keyboard_75.jpg", badge: "sale" },
+    { id: 17, name: "Pulse Sound Pro", price: 229.00, oldPrice: null, category: "Audio", rating: 4.8, reviews: 137, image: "assets/premium_earbuds.jpg", badge: null },
+    { id: 18, name: "VisionCam 4K Pro", price: 179.00, oldPrice: 219.00, category: "Accesorios", rating: 4.6, reviews: 71, image: "assets/premium_webcam.jpg", badge: "sale" },
+    { id: 19, name: "LumiCast Pocket", price: 349.00, oldPrice: null, category: "Hogar", rating: 4.7, reviews: 58, image: "assets/premium_projector.jpg", badge: "new" }
 ];
 
-// Cargar catálogo persistido o defaults
-let products = JSON.parse(localStorage.getItem('confort_products')) || defaultProducts;
+// Conservar los productos guardados y sumar nuevas referencias del catálogo.
+const savedProducts = JSON.parse(localStorage.getItem('confort_products'));
+let products = Array.isArray(savedProducts)
+    ? [...savedProducts, ...defaultProducts.filter(defaultProduct => !savedProducts.some(savedProduct => savedProduct.id === defaultProduct.id))]
+    : defaultProducts;
+const productImageUpdates = new Map(defaultProducts.map(product => [product.id, product.image]));
+products.forEach(product => {
+    if (productImageUpdates.has(product.id)) {
+        product.image = productImageUpdates.get(product.id);
+    }
+});
+if (Array.isArray(savedProducts)) {
+    localStorage.setItem('confort_products', JSON.stringify(products));
+}
 
 // Sincronizar imagen del micrófono si quedó antigua en localStorage
 const micProduct = products.find(p => p.id === 9);
