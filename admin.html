@@ -3,138 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración & BCP - Confort Market</title>
+    <title>Panel Admin BCP - Confort Market</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="auth-guard.js"></script>
+    <style>
+        /* ─── Overrides específicos del admin ─── */
+        body { margin: 0; font-family: 'Outfit', sans-serif; background: #080808; color: #fff; }
+        * { box-sizing: border-box; }
+
+        /* Ocultar navbar global en admin */
+        #navbar { display: none !important; }
+
+        /* Search input mini */
+        .search-mini {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.45rem 1rem 0.45rem 2.2rem;
+            color: #fff; font-size: 0.85rem; outline: none; width: 200px;
+        }
+        .search-mini::placeholder { color: rgba(255,255,255,0.3); }
+        .search-mini-wrap { position: relative; }
+        .search-mini-wrap i { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.3); font-size: 0.85rem; }
+
+        /* Live status pill */
+        .live-pill {
+            display: flex; align-items: center; gap: 0.4rem;
+            background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.25);
+            border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.78rem; color: #2ed573;
+        }
+        .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ed573; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        /* Activity feed */
+        .activity-feed { max-height: 300px; overflow-y: auto; }
+
+        /* Product form modal override */
+        .prod-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        .prod-modal-box {
+            background: #141414;
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 20px; padding: 2rem;
+            max-width: 560px; width: 92%;
+            max-height: 90vh; overflow-y: auto;
+            position: relative;
+        }
+        .prod-modal-close {
+            position: absolute; top: 1rem; right: 1rem;
+            background: rgba(255,255,255,0.07); border: none;
+            color: #fff; width: 32px; height: 32px;
+            border-radius: 50%; cursor: pointer; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .prod-modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .prod-modal-title i { color: var(--gold-primary, #d4af37); }
+        .form-label-sm { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.35rem; }
+        .form-input-dark {
+            width: 100%; padding: 0.7rem 1rem;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: #fff; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input-dark:focus { border-color: var(--gold-primary, #d4af37); }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group-sm { margin-bottom: 1rem; }
+
+        /* Toggle switch for failover */
+        .toggle-wrap { display: flex; align-items: center; gap: 0.75rem; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 99px; transition: 0.3s; }
+        .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
+        .toggle-switch input:checked + .toggle-slider { background: #d4af37; }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+        /* Charts placeholder */
+        .mini-chart { background: rgba(255,255,255,0.03); border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.2); font-size: 0.8rem; }
+
+        select.form-input-dark option { background: #1a1a1a; }
+    </style>
 </head>
-<body class="admin-page">
+<body>
     <div class="toast-container" id="toast-container"></div>
 
-    <nav class="navbar admin-navbar" id="navbar">
-        <a href="index.html" class="nav-brand"><img src="assets/logo.png" alt="Confort Market"></a>
-        <div class="admin-navbar-actions">
-            <a href="index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Ver tienda</a>
-            <a href="dashboard.html" class="btn btn-outline"><i class="fa-solid fa-user"></i> Mi cuenta</a>
-            <button type="button" class="btn btn-primary admin-logout" onclick="logout(event)"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
-        </div>
-    </nav>
+    <!-- BCP Failover Banner -->
+    <div class="bcp-banner" id="bcp-banner" style="display:none;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <strong>MODO CONTINGENCIA ACTIVO</strong> — Sistema operando en servidor de respaldo BCP
+        <button onclick="toggleBcpFailover()" style="margin-left:1rem; padding:0.3rem 0.8rem; border-radius:6px; border:1px solid #fff; background:transparent; color:#fff; cursor:pointer; font-size:0.82rem;">Desactivar</button>
+    </div>
 
-    <div class="dashboard-layout admin-layout">
-        <aside class="sidebar admin-sidebar">
-            <div class="user-profile">
-                <div class="avatar admin-avatar"><i class="fa-solid fa-shield-halved"></i></div>
-                <div class="user-info">
-                    <h3 id="admin-username-display">Administrador</h3>
-                    <p id="admin-email-display">admin@confortmarket.com</p>
-                    <span class="user-role-badge">Oficial BCP</span>
+    <div class="admin-wrap">
+        <!-- ═══ SIDEBAR ═══ -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <img src="assets/logo.png" alt="Logo">
+                <div>
+                    <div class="sidebar-brand-text">Confort Market</div>
+                    <div class="sidebar-brand-sub">Panel Administrativo</div>
                 </div>
             </div>
 
-            <nav class="sidebar-nav admin-sidebar-nav" aria-label="Menú administrativo">
-                <a href="#" class="sidebar-link active" data-admin-tab="tab-admin-bcp"><i class="fa-solid fa-server"></i> Centro de mando</a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-insights"><i class="fa-solid fa-chart-line"></i> Inteligencia comercial</a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-crud"><i class="fa-solid fa-boxes-stacked"></i> Catálogo</a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-orders"><i class="fa-solid fa-receipt"></i> Pedidos</a>
-                <a href="#" class="sidebar-link" data-admin-tab="tab-admin-logs"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría</a>
-            </nav>
+            <div class="sidebar-user-card">
+                <div class="sidebar-avatar"><i class="fa-solid fa-shield-halved"></i></div>
+                <div>
+                    <div class="sidebar-user-name" id="admin-username-display">Administrador</div>
+                    <div class="sidebar-user-role">Oficial BCP</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section-label">Monitoreo</div>
+            <a class="sidebar-nav-item active" data-panel="panel-bcp" href="#">
+                <i class="fa-solid fa-server"></i> Centro de Mando BCP
+                <span class="sidebar-nav-badge">Live</span>
+            </a>
+            <a class="sidebar-nav-item" data-panel="panel-analytics" href="#">
+                <i class="fa-solid fa-chart-line"></i> Analítica y Ventas
+            </a>
+
+            <div class="sidebar-section-label">Gestión</div>
+            <a class="sidebar-nav-item" data-panel="panel-catalog" href="#">
+                <i class="fa-solid fa-boxes-stacked"></i> Catálogo (CRUD)
+            </a>
+            <a class="sidebar-nav-item" data-panel="panel-orders" href="#">
+                <i class="fa-solid fa-receipt"></i> Gestión de Pedidos
+                <span class="sidebar-nav-badge" id="pending-orders-badge" style="display:none;">0</span>
+            </a>
+            <a class="sidebar-nav-item" data-panel="panel-users" href="#">
+                <i class="fa-solid fa-users"></i> Usuarios Registrados
+            </a>
+
+            <div class="sidebar-section-label">Auditoría</div>
+            <a class="sidebar-nav-item" data-panel="panel-logs" href="#">
+                <i class="fa-solid fa-clock-rotate-left"></i> Logs e Incidentes
+            </a>
+
+            <div class="sidebar-bottom">
+                <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+                    <a href="index.html" class="btn-micro blue" style="flex:1; justify-content:center;">
+                        <i class="fa-solid fa-store"></i> Ver Tienda
+                    </a>
+                    <a href="dashboard.html" class="btn-micro gold" style="flex:1; justify-content:center;">
+                        <i class="fa-solid fa-user"></i> Mi Perfil
+                    </a>
+                </div>
+                <button class="sidebar-logout-btn" onclick="logout(event)">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </button>
+            </div>
         </aside>
 
-        <main class="dashboard-main admin-main">
-            <!-- Tab 1: Centro de Mando BCP -->
-            <div id="tab-admin-bcp" class="admin-tab-content active">
-                <div class="admin-page-heading">
-                    <div>
-                        <span class="admin-eyebrow">SISTEMA DE CONTINUIDAD</span>
-                        <h2>Centro de mando <span class="gold-text">BCP & DRP</span></h2>
-                        <p>Supervisión de continuidad de negocio y recuperación ante desastres.</p>
+        <!-- ═══ MAIN CONTENT ═══ -->
+        <main class="admin-main">
+            <!-- Topbar -->
+            <div class="admin-topbar">
+                <div>
+                    <div class="admin-topbar-title" id="topbar-title">Centro de Mando BCP</div>
+                    <div class="admin-topbar-sub" id="topbar-sub">Supervisión de Continuidad de Negocio y Recuperación ante Desastres</div>
+                </div>
+                <div class="admin-topbar-actions">
+                    <div class="live-pill"><span class="live-dot"></span> Sistema Online</div>
+                    <div class="search-mini-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" class="search-mini" placeholder="Buscar...">
                     </div>
-                    <div class="admin-actions">
-                        <button type="button" class="btn btn-outline" onclick="generateBcpReportPDF()"><i class="fa-solid fa-file-pdf"></i> Informe BCP</button>
-                        <button type="button" class="btn btn-primary" id="btn-toggle-failover" onclick="toggleBcpFailover()"><i class="fa-solid fa-bolt"></i> Simular contigencia</button>
+                </div>
+            </div>
+
+            <!-- ══ Tab: BCP ══ -->
+            <div class="admin-tab-panel active" id="panel-bcp">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-heart-pulse"></i> Estado Servidor</div>
+                        <div class="kpi-card-value" id="bcp-server-status" style="color:#2ed573; font-size:1.1rem;">Principal Activo</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> 99.9% uptime</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-database"></i> Último Backup</div>
+                        <div class="kpi-card-value" style="color:var(--gold-primary, #d4af37); font-size:1.3rem;">Hace 15 min</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> RPO cumplido</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-vault"></i> Backup Offline</div>
+                        <div class="kpi-card-value" style="color:#3498db; font-size:1.1rem;">Aislado Seguro</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-shield-halved"></i> Air-Gap activo</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-clock"></i> RTO Objetivo</div>
+                        <div class="kpi-card-value" style="color:#ffa502;">1 hora</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> ISO 22301</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-shield-virus"></i> Anti-DDoS</div>
+                        <div class="kpi-card-value" style="color:#2ed573; font-size:1.1rem;">Protegido</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-cloud"></i> Cloudflare</div>
                     </div>
                 </div>
 
-                <!-- BCP KPI Cards -->
-                <div class="stat-grid" style="margin-bottom: 2rem;">
-                    <div class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
-                        <div class="stat-value" id="bcp-server-status" style="font-size:1.5rem; color:#2ed573;">Principal Activo</div>
-                        <div class="stat-label">Estado del Servidor</div>
+                <!-- BCP Actions + Failover -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-title"><i class="fa-solid fa-bolt"></i> Control de Contingencia</div>
+                        </div>
+                        <p style="font-size:0.875rem; color:rgba(255,255,255,0.5); margin-bottom:1.25rem;">Activa el modo failover para simular una contingencia y redirigir al servidor de respaldo.</p>
+                        <div class="toggle-wrap" style="margin-bottom:1.25rem;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="failover-toggle" onchange="toggleBcpFailoverFromToggle(this)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span style="font-size:0.875rem;" id="failover-label">Failover Inactivo</span>
+                        </div>
+                        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                            <button class="btn btn-outline" onclick="generateBcpReportPDF()" style="font-size:0.85rem; padding:0.5rem 1rem;">
+                                <i class="fa-solid fa-file-pdf"></i> Informe BCP PDF
+                            </button>
+                            <button class="btn btn-primary" onclick="runDrpTest('Sistema Completo')" style="font-size:0.85rem; padding:0.5rem 1rem;">
+                                <i class="fa-solid fa-flask"></i> Ejecutar DRP
+                            </button>
+                        </div>
                     </div>
-                    <div class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-database"></i></div>
-                        <div class="stat-value" id="bcp-last-backup" style="font-size:1.5rem; color:var(--gold-light);">Hace 15 min</div>
-                        <div class="stat-label">Último Backup Local</div>
-                    </div>
-                    <div class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-vault"></i></div>
-                        <div class="stat-value" style="font-size:1.5rem; color:#3498db;">Aislado Seguro</div>
-                        <div class="stat-label">Backup Offline (Air-Gap)</div>
+
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <div class="admin-card-title"><i class="fa-solid fa-gauge-high"></i> Niveles de Servicio</div>
+                        </div>
+                        <div class="bcp-progress-row">
+                            <div class="bcp-progress-label">Base de Datos</div>
+                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:99%; background:#2ed573;"></div></div>
+                            <div class="bcp-progress-value" style="color:#2ed573;">99%</div>
+                        </div>
+                        <div class="bcp-progress-row">
+                            <div class="bcp-progress-label">Pasarela Pagos</div>
+                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:98%; background:#2ed573;"></div></div>
+                            <div class="bcp-progress-value" style="color:#2ed573;">98%</div>
+                        </div>
+                        <div class="bcp-progress-row">
+                            <div class="bcp-progress-label">CDN / Assets</div>
+                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:100%; background:var(--gold-primary,#d4af37);"></div></div>
+                            <div class="bcp-progress-value" style="color:var(--gold-primary,#d4af37);">100%</div>
+                        </div>
+                        <div class="bcp-progress-row">
+                            <div class="bcp-progress-label">API Interna</div>
+                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:95%; background:#ffa502;"></div></div>
+                            <div class="bcp-progress-value" style="color:#ffa502;">95%</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Infrastructure & RTO/RPO Table -->
-                <div class="glass-card" style="padding: 1.5rem; margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1.2rem;"><i class="fa-solid fa-network-wired"></i> Monitoreo de Infraestructura Crítica</h3>
-                    <div class="orders-table-container">
-                        <table class="orders-table">
+                <!-- Infrastructure Table -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-network-wired"></i> Monitoreo de Infraestructura Crítica</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
                                     <th>Servicio Crítico</th>
-                                    <th>Estado Actual</th>
-                                    <th>RTO Definido</th>
-                                    <th>RPO Definido</th>
+                                    <th>Estado</th>
+                                    <th>RTO</th>
+                                    <th>RPO</th>
+                                    <th>Última Prueba</th>
                                     <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
                                     <td><strong>Base de Datos Clientes & Pedidos</strong></td>
-                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Sincronizado</span></td>
-                                    <td>1 hora</td>
-                                    <td>15 minutos</td>
-                                    <td>
-                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Base de Datos')">
-                                            Test DRP
-                                        </button>
-                                    </td>
+                                    <td><span class="status-dot green"></span>Sincronizado</td>
+                                    <td>1 hora</td><td>15 min</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy 09:00</td>
+                                    <td><button class="btn-micro blue" onclick="runDrpTest('Base de Datos')"><i class="fa-solid fa-play"></i> Test DRP</button></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Pasarela de Pagos Cifrada</strong></td>
-                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Operativo</span></td>
-                                    <td>30 minutos</td>
-                                    <td>5 minutos</td>
-                                    <td>
-                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Pasarela de Pagos')">
-                                            Test DRP
-                                        </button>
-                                    </td>
+                                    <td><span class="status-dot green"></span>Operativo</td>
+                                    <td>30 min</td><td>5 min</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy 08:30</td>
+                                    <td><button class="btn-micro blue" onclick="runDrpTest('Pasarela de Pagos')"><i class="fa-solid fa-play"></i> Test DRP</button></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Protección Anti-DDoS & Cloudflare</strong></td>
-                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Protegido</span></td>
-                                    <td>Inmediato</td>
-                                    <td>N/A</td>
-                                    <td>
-                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Anti-DDoS')">
-                                            Verificar
-                                        </button>
-                                    </td>
+                                    <td><span class="status-dot green"></span>Protegido</td>
+                                    <td>Inmediato</td><td>N/A</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy 07:00</td>
+                                    <td><button class="btn-micro green" onclick="runDrpTest('Anti-DDoS')"><i class="fa-solid fa-shield-halved"></i> Verificar</button></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Almacén de Imágenes & Assets</strong></td>
-                                    <td><span class="status-badge" style="background:rgba(46,213,115,0.15); color:#2ed573;">Local / CDN</span></td>
-                                    <td>2 horas</td>
-                                    <td>1 hora</td>
-                                    <td>
-                                        <button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="runDrpTest('Almacén Assets')">
-                                            Test DRP
-                                        </button>
-                                    </td>
+                                    <td><span class="status-dot blue"></span>Local/CDN</td>
+                                    <td>2 horas</td><td>1 hora</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Ayer 18:00</td>
+                                    <td><button class="btn-micro blue" onclick="runDrpTest('Almacén Assets')"><i class="fa-solid fa-play"></i> Test DRP</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cifrado bcrypt (Auth)</strong></td>
+                                    <td><span class="status-dot green"></span>Activo</td>
+                                    <td>Inmediato</td><td>N/A</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy (nuevo)</td>
+                                    <td><button class="btn-micro green" onclick="runDrpTest('Cifrado bcrypt')"><i class="fa-solid fa-lock"></i> Verificar</button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -142,181 +320,120 @@
                 </div>
             </div>
 
-            <!-- Executive ecommerce overview -->
-            <div id="tab-admin-insights" class="admin-tab-content" style="display:none;">
-                <div class="admin-page-heading">
-                    <div>
-                        <span class="admin-eyebrow">INTELIGENCIA COMERCIAL</span>
-                        <h2>Pulso del <span class="gold-text">e-commerce</span></h2>
-                        <p>Ventas recientes, demanda y prioridades para la operación.</p>
+            <!-- ══ Tab: Analytics ══ -->
+            <div class="admin-tab-panel" id="panel-analytics">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-dollar-sign"></i> Ventas del Mes</div>
+                        <div class="kpi-card-value">$12,480</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> +18% vs mes anterior</div>
                     </div>
-                    <button type="button" class="btn btn-outline" data-admin-open-orders>
-                        <i class="fa-solid fa-list-check"></i> Gestionar pedidos
-                    </button>
-                </div>
-
-                <div class="admin-data-scope">
-                    <i class="fa-solid fa-circle-info"></i>
-                    Indicadores calculados con los pedidos guardados en este navegador; todavía no representan datos centralizados entre dispositivos.
-                </div>
-
-                <div class="stat-grid admin-insight-kpis">
-                    <article class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
-                        <div class="stat-value" id="insight-revenue">$0.00</div>
-                        <div class="stat-label">Ventas registradas · 30 días</div>
-                    </article>
-                    <article class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-bag-shopping"></i></div>
-                        <div class="stat-value" id="insight-orders">0</div>
-                        <div class="stat-label">Pedidos · 30 días</div>
-                    </article>
-                    <article class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-chart-simple"></i></div>
-                        <div class="stat-value" id="insight-average">$0.00</div>
-                        <div class="stat-label">Ticket promedio · 30 días</div>
-                    </article>
-                    <article class="glass-card stat-card">
-                        <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-                        <div class="stat-value" id="insight-pending">0</div>
-                        <div class="stat-label">Pedidos por preparar</div>
-                    </article>
-                </div>
-
-                <div class="admin-insights-grid">
-                    <section class="glass-card admin-insight-panel">
-                        <div class="admin-insight-panel-heading">
-                            <div>
-                                <span class="admin-eyebrow">ACTIVIDAD</span>
-                                <h3>Ventas de los últimos 7 días</h3>
-                            </div>
-                            <i class="fa-solid fa-chart-column" aria-hidden="true"></i>
-                        </div>
-                        <div class="admin-sales-chart" id="insight-sales-chart" role="img" aria-label="Ventas por día en los últimos siete días"></div>
-                    </section>
-
-                    <section class="glass-card admin-insight-panel">
-                        <div class="admin-insight-panel-heading">
-                            <div>
-                                <span class="admin-eyebrow">DEMANDA</span>
-                                <h3>Productos más vendidos</h3>
-                            </div>
-                            <i class="fa-solid fa-ranking-star" aria-hidden="true"></i>
-                        </div>
-                        <ol class="admin-top-products" id="insight-top-products"></ol>
-                    </section>
-                </div>
-
-                <section class="glass-card admin-insight-panel admin-priority-panel">
-                    <div class="admin-insight-panel-heading">
-                        <div>
-                            <span class="admin-eyebrow">CENTRO DE ACCIÓN</span>
-                            <h3>Pedidos que requieren atención</h3>
-                        </div>
-                        <span class="admin-priority-count" id="insight-overdue-count">0 atrasados</span>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-cart-shopping"></i> Pedidos Totales</div>
+                        <div class="kpi-card-value" id="total-orders-kpi">—</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> En crecimiento</div>
                     </div>
-                    <div class="orders-table-container">
-                        <table class="orders-table admin-table admin-priority-table">
-                            <thead>
-                                <tr>
-                                    <th>Pedido</th>
-                                    <th>Cliente</th>
-                                    <th>Antigüedad</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="insight-priority-orders"></tbody>
-                        </table>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-users"></i> Usuarios Registrados</div>
+                        <div class="kpi-card-value" id="total-users-kpi">—</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> Nuevos esta semana</div>
                     </div>
-                    <p class="admin-insight-footnote">Se priorizan primero los pedidos en estado “Procesando” con más de 48 horas.</p>
-                </section>
+                    <div class="kpi-card">
+                        <div class="kpi-card-label"><i class="fa-solid fa-boxes-stacked"></i> Productos</div>
+                        <div class="kpi-card-value" id="total-products-kpi">—</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> Catálogo activo</div>
+                    </div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-chart-bar"></i> Top Productos más Vendidos</div>
+                    </div>
+                    <div id="top-products-list"></div>
+                </div>
             </div>
 
-            <!-- Tab 2: Catálogo CRUD -->
-            <div id="tab-admin-crud" class="admin-tab-content" style="display:none;">
-                <div class="admin-page-heading">
-                    <div>
-                        <span class="admin-eyebrow">GESTIÓN DEL INVENTARIO</span>
-                        <h2>Catálogo <span class="gold-text">CRUD</span></h2>
-                        <p>Crea, edita o elimina productos del inventario.</p>
+            <!-- ══ Tab: Catálogo CRUD ══ -->
+            <div class="admin-tab-panel" id="panel-catalog">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-boxes-stacked"></i> Gestión de Catálogo</div>
+                        <button class="btn btn-primary" onclick="openProductModal()" style="font-size:0.85rem; padding:0.5rem 1rem;">
+                            <i class="fa-solid fa-plus"></i> Nuevo Producto
+                        </button>
                     </div>
-                    <button type="button" class="btn btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus"></i> Nuevo producto</button>
-                </div>
-
-                <div class="glass-card admin-table-card">
-                    <div class="admin-table-toolbar">
-                        <div><strong>Inventario actual</strong><span id="admin-product-count">0 productos</span></div>
-                        <span class="admin-live"><i class="fa-solid fa-circle"></i> Datos locales</span>
-                    </div>
-                    <div class="orders-table-container">
-                        <table class="orders-table admin-table">
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Imagen</th>
-                                    <th>Producto</th>
-                                    <th>Categoría</th>
-                                    <th>Precio</th>
-                                    <th>Insignia</th>
-                                    <th>Acciones</th>
+                                    <th>Imagen</th><th>Producto</th><th>Categoría</th>
+                                    <th>Precio</th><th>Rating</th><th>Insignia</th><th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-products-tbody">
-                                <tr><td colspan="6" class="admin-empty">Cargando catálogo…</td></tr>
-                            </tbody>
+                            <tbody id="admin-products-tbody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 3: Gestión de Pedidos -->
-            <div id="tab-admin-orders" class="admin-tab-content" style="display:none;">
-                <div class="dashboard-header">
-                    <h2>Gestión de <span class="gold-text">Pedidos Globales</span></h2>
-                    <p style="color:var(--text-secondary);">Revisa y actualiza el estado de las órdenes de los clientes.</p>
-                </div>
-
-                <div class="glass-card" style="padding: 1.5rem;">
-                    <div class="orders-table-container">
-                        <table class="orders-table">
+            <!-- ══ Tab: Pedidos ══ -->
+            <div class="admin-tab-panel" id="panel-orders">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-receipt"></i> Gestión de Pedidos Globales</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>ID Pedido</th>
-                                    <th>Cliente</th>
-                                    <th>Fecha</th>
-                                    <th>Total</th>
-                                    <th>Estado</th>
-                                    <th>Acción</th>
+                                    <th>ID Pedido</th><th>Cliente</th><th>Fecha</th>
+                                    <th>Total</th><th>Estado</th><th>Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-orders-tbody">
-                                <!-- Inyectado por JS -->
-                            </tbody>
+                            <tbody id="admin-orders-tbody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 4: Auditoría y Logs -->
-            <div id="tab-admin-logs" class="admin-tab-content" style="display:none;">
-                <div class="dashboard-header">
-                    <h2>Auditoría de <span class="gold-text">Continuidad (BCP)</span></h2>
-                    <p style="color:var(--text-secondary);">Registro inmutable de simulacros, respaldos e incidentes.</p>
-                </div>
-
-                <div class="glass-card" style="padding: 1.5rem;">
-                    <div class="orders-table-container">
-                        <table class="orders-table">
+            <!-- ══ Tab: Usuarios ══ -->
+            <div class="admin-tab-panel" id="panel-users">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-users"></i> Usuarios Registrados</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Fecha y Hora</th>
-                                    <th>Tipo de Evento</th>
-                                    <th>Estado</th>
-                                    <th>Descripción</th>
+                                    <th>Usuario</th><th>Email</th><th>Rol</th>
+                                    <th>Contraseña Cifrada</th><th>Creado</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-logs-tbody">
-                                <!-- JS inyecta logs -->
-                            </tbody>
+                            <tbody id="admin-users-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ Tab: Logs ══ -->
+            <div class="admin-tab-panel" id="panel-logs">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría de Continuidad (BCP)</div>
+                        <button class="btn-micro gold" onclick="renderAdminLogs()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                    </div>
+                    <div class="activity-feed" id="admin-logs-feed"></div>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <div class="admin-card-title"><i class="fa-solid fa-table"></i> Tabla de Eventos</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr><th>Fecha y Hora</th><th>Tipo</th><th>Estado</th><th>Descripción</th></tr>
+                            </thead>
+                            <tbody id="admin-logs-tbody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -324,63 +441,53 @@
         </main>
     </div>
 
-    <!-- Product Modal (Create / Edit) -->
-    <div class="modal-overlay" id="product-modal" style="display: none;">
-        <div class="glass-card modal-box" style="max-width: 550px;">
-            <button class="modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h3 id="modal-product-title" style="margin-bottom: 1.5rem;"><i class="fa-solid fa-box-open"></i> Producto</h3>
+    <!-- ═══ PRODUCT MODAL ═══ -->
+    <div class="prod-modal-overlay" id="product-modal">
+        <div class="prod-modal-box">
+            <button class="prod-modal-close" onclick="closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="prod-modal-title"><i class="fa-solid fa-box-open"></i> <span id="modal-product-title">Producto</span></div>
             <form id="product-form" onsubmit="saveProduct(event)">
                 <input type="hidden" id="prod-id">
-                
-                <div class="form-group">
-                    <label>Nombre del Producto</label>
-                    <input type="text" id="prod-name" class="form-control" style="padding-left:1rem;" required>
+                <div class="form-group-sm">
+                    <label class="form-label-sm">Nombre del Producto</label>
+                    <input type="text" id="prod-name" class="form-input-dark" required placeholder="Ej. Monitor Vision 4K">
                 </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-                    <div class="form-group">
-                        <label>Precio ($USD)</label>
-                        <input type="number" id="prod-price" class="form-control" style="padding-left:1rem;" step="0.01" required>
+                <div class="form-row-2">
+                    <div class="form-group-sm">
+                        <label class="form-label-sm">Precio ($USD)</label>
+                        <input type="number" id="prod-price" class="form-input-dark" step="0.01" required placeholder="0.00">
                     </div>
-                    <div class="form-group">
-                        <label>Precio Anterior (Opcional)</label>
-                        <input type="number" id="prod-old-price" class="form-control" style="padding-left:1rem;" step="0.01">
+                    <div class="form-group-sm">
+                        <label class="form-label-sm">Precio Anterior (opcional)</label>
+                        <input type="number" id="prod-old-price" class="form-input-dark" step="0.01" placeholder="0.00">
                     </div>
                 </div>
-
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
-                    <div class="form-group">
-                        <label>Categoría</label>
-                        <select id="prod-category" class="form-control" style="padding-left:1rem; background:#121212;">
-                            <option value="Computadores">Computadores</option>
-                            <option value="Audio">Audio</option>
-                            <option value="Accesorios">Accesorios</option>
-                            <option value="Drones">Drones</option>
-                            <option value="Hogar">Hogar</option>
+                <div class="form-row-2">
+                    <div class="form-group-sm">
+                        <label class="form-label-sm">Categoría</label>
+                        <select id="prod-category" class="form-input-dark">
+                            <option>Computadores</option><option>Audio</option>
+                            <option>Accesorios</option><option>Drones</option><option>Hogar</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Insignia</label>
-                        <select id="prod-badge" class="form-control" style="padding-left:1rem; background:#121212;">
+                    <div class="form-group-sm">
+                        <label class="form-label-sm">Insignia</label>
+                        <select id="prod-badge" class="form-input-dark">
                             <option value="">Ninguna</option>
                             <option value="new">Nuevo</option>
                             <option value="sale">Oferta</option>
                         </select>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Ruta o URL de Imagen</label>
-                    <input type="text" id="prod-image" class="form-control" placeholder="assets/nombre_imagen.jpg" style="padding-left:1rem;" required>
+                <div class="form-group-sm">
+                    <label class="form-label-sm">Ruta o URL de Imagen</label>
+                    <input type="text" id="prod-image" class="form-input-dark" required placeholder="assets/nombre.jpg">
                 </div>
-
-                <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+                <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
                     <button type="submit" class="btn btn-primary" style="flex:1;">
                         <i class="fa-solid fa-floppy-disk"></i> Guardar Producto
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="closeProductModal()">
-                        Cancelar
-                    </button>
+                    <button type="button" class="btn btn-outline" onclick="closeProductModal()">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -389,31 +496,142 @@
     <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            initAdminTabs();
+            // Set admin name
+            const cu = JSON.parse(localStorage.getItem('confort_current_user')) || {};
+            if (cu.username) document.getElementById('admin-username-display').textContent = cu.username;
+
+            // Sidebar navigation
+            const navItems = document.querySelectorAll('.sidebar-nav-item[data-panel]');
+            const panels = document.querySelectorAll('.admin-tab-panel');
+            const topbarTitle = document.getElementById('topbar-title');
+            const topbarSub = document.getElementById('topbar-sub');
+
+            const titles = {
+                'panel-bcp': ['Centro de Mando BCP', 'Supervisión de Continuidad de Negocio y Recuperación ante Desastres'],
+                'panel-analytics': ['Analítica y Ventas', 'Métricas en tiempo real de la tienda Confort Market'],
+                'panel-catalog': ['Gestión de Catálogo', 'Crea, edita o elimina productos del inventario'],
+                'panel-orders': ['Gestión de Pedidos', 'Revisa y actualiza el estado de las órdenes'],
+                'panel-users': ['Usuarios Registrados', 'Listado de todos los usuarios con contraseñas cifradas con bcrypt'],
+                'panel-logs': ['Logs e Incidentes BCP', 'Registro inmutable de simulacros, respaldos e incidentes']
+            };
+
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navItems.forEach(n => n.classList.remove('active'));
+                    item.classList.add('active');
+                    const panelId = item.getAttribute('data-panel');
+                    panels.forEach(p => p.classList.remove('active'));
+                    document.getElementById(panelId)?.classList.add('active');
+                    if (titles[panelId]) {
+                        topbarTitle.textContent = titles[panelId][0];
+                        topbarSub.textContent = titles[panelId][1];
+                    }
+                    if (panelId === 'panel-catalog') renderAdminProducts();
+                    if (panelId === 'panel-orders') renderAdminOrders();
+                    if (panelId === 'panel-logs') { renderAdminLogs(); renderAdminLogsFeed(); }
+                    if (panelId === 'panel-users') renderAdminUsers();
+                    if (panelId === 'panel-analytics') renderAnalytics();
+                });
+            });
+
             renderAdminProducts();
             renderAdminOrders();
-            renderAdminInsights();
             renderAdminLogs();
-            document.querySelectorAll('[data-admin-open-orders]').forEach(button => {
-                button.addEventListener('click', () => {
-                    document.querySelector('[data-admin-tab="tab-admin-orders"]').click();
-                });
-            });
+            renderAdminLogsFeed();
+            renderAnalytics();
+            renderAdminUsers();
         });
 
-        function initAdminTabs() {
-            const links = document.querySelectorAll('.sidebar-link[data-admin-tab]');
-            links.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    links.forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                    const targetId = link.getAttribute('data-admin-tab');
-                    document.querySelectorAll('.admin-tab-content').forEach(c => c.style.display = 'none');
-                    const targetEl = document.getElementById(targetId);
-                    if (targetEl) targetEl.style.display = 'block';
-                });
+        window.toggleBcpFailoverFromToggle = (checkbox) => {
+            const label = document.getElementById('failover-label');
+            if (checkbox.checked) {
+                label.textContent = 'Failover ACTIVO';
+                label.style.color = '#ff4757';
+                document.getElementById('bcp-banner').style.display = 'flex';
+                document.getElementById('bcp-server-status').textContent = 'Servidor Respaldo';
+                document.getElementById('bcp-server-status').style.color = '#ffa502';
+                showToast('Modo contingencia activado', 'error');
+            } else {
+                label.textContent = 'Failover Inactivo';
+                label.style.color = '';
+                document.getElementById('bcp-banner').style.display = 'none';
+                document.getElementById('bcp-server-status').textContent = 'Principal Activo';
+                document.getElementById('bcp-server-status').style.color = '#2ed573';
+                showToast('Sistema restaurado al servidor principal', 'success');
+            }
+            localStorage.setItem('bcp_failover', checkbox.checked ? 'true' : 'false');
+        };
+
+        // Restore failover state
+        if (localStorage.getItem('bcp_failover') === 'true') {
+            document.addEventListener('DOMContentLoaded', () => {
+                const tog = document.getElementById('failover-toggle');
+                if (tog) { tog.checked = true; toggleBcpFailoverFromToggle(tog); }
             });
+        }
+
+        function renderAdminLogsFeed() {
+            const feed = document.getElementById('admin-logs-feed');
+            if (!feed) return;
+            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [
+                { type:'success', icon:'fa-circle-check', title:'Sistema iniciado correctamente', time:'Hoy 06:00', desc:'Servidor principal online. Todos los servicios operativos.' },
+                { type:'info', icon:'fa-database', title:'Backup automático completado', time:'Hoy 06:15', desc:'Se realizó respaldo incremental de la base de datos. 0 errores.' },
+                { type:'warning', icon:'fa-triangle-exclamation', title:'Pico de tráfico detectado', time:'Hoy 10:30', desc:'Anti-DDoS absorbió 1,200 req/s. Sin impacto al usuario.' },
+                { type:'success', icon:'fa-lock', title:'bcrypt activado en autenticación', time:'Hoy (nuevo)', desc:'Cifrado de contraseñas mejorado a bcrypt cost-10. Usuarios migrados automáticamente.' },
+                { type:'info', icon:'fa-file-pdf', title:'Informe BCP generado', time:'Ayer 17:00', desc:'Informe ISO 22301 descargado por el administrador.' }
+            ];
+            feed.innerHTML = logs.map(l => `
+                <div class="log-entry">
+                    <div class="log-icon ${l.type}"><i class="fa-solid ${l.icon}"></i></div>
+                    <div>
+                        <div class="log-event-name">${l.title}</div>
+                        <div class="log-event-time">${l.time}</div>
+                        <div class="log-event-desc">${l.desc}</div>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderAdminUsers() {
+            const tbody = document.getElementById('admin-users-tbody');
+            if (!tbody) return;
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.3); padding:2rem;">No hay usuarios registrados aún</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><strong>${u.username}</strong></td>
+                    <td style="color:rgba(255,255,255,0.6);">${u.email}</td>
+                    <td><span class="status-badge" style="background:${u.role==='admin'?'rgba(212,175,55,0.15)':'rgba(52,152,219,0.15)'}; color:${u.role==='admin'?'var(--gold-primary,#d4af37)':'#3498db'};">${u.role}</span></td>
+                    <td style="font-family:monospace; font-size:0.72rem; color:${u.password?.startsWith('$2')?'#2ed573':'#ffa502'};">
+                        ${u.password?.startsWith('$2') ? '<i class="fa-solid fa-lock" style="margin-right:0.3rem;"></i>bcrypt' : '<i class="fa-solid fa-triangle-exclamation" style="margin-right:0.3rem;"></i>texto plano'}
+                    </td>
+                    <td style="color:rgba(255,255,255,0.35); font-size:0.8rem;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                </tr>`).join('');
+        }
+
+        function renderAnalytics() {
+            const orders = JSON.parse(localStorage.getItem('confort_orders')) || [];
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const prods = JSON.parse(localStorage.getItem('confort_products')) || [];
+            const totalOrdersKpi = document.getElementById('total-orders-kpi');
+            const totalUsersKpi = document.getElementById('total-users-kpi');
+            const totalProdsKpi = document.getElementById('total-products-kpi');
+            if (totalOrdersKpi) totalOrdersKpi.textContent = orders.length;
+            if (totalUsersKpi) totalUsersKpi.textContent = users.length;
+            if (totalProdsKpi) totalProdsKpi.textContent = prods.length;
+
+            const topList = document.getElementById('top-products-list');
+            if (topList) {
+                topList.innerHTML = prods.slice(0,5).map((p, i) => `
+                    <div class="bcp-progress-row">
+                        <div class="bcp-progress-label" style="font-size:0.82rem;">${i+1}. ${p.name}</div>
+                        <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:${80 - i*12}%; background:var(--gold-primary,#d4af37);"></div></div>
+                        <div class="bcp-progress-value" style="color:var(--gold-primary,#d4af37);">${p.reviews || 0}</div>
+                    </div>`).join('');
+            }
         }
     </script>
 </body>

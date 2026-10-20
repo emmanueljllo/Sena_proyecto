@@ -1,4 +1,4 @@
-// --- Datos Iniciales de Productos ---
+﻿// --- Datos Iniciales de Productos ---
 const defaultProducts = [
     { id: 1, name: "ConfortBook Pro X", price: 1499.00, oldPrice: 1699.00, category: "Computadores", rating: 4.9, reviews: 128, image: "assets/premium_laptop_1778531221300.png", badge: "new" },
     { id: 2, name: "Chrono Elite Gold", price: 399.00, oldPrice: null, category: "Accesorios", rating: 4.8, reviews: 85, image: "assets/premium_smartwatch_1778531397408.png", badge: null },
@@ -1553,10 +1553,31 @@ const setFieldError = (field, message) => {
 
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+// 🔐 Helpers bcrypt (soporta dcodeIO.bcrypt CDN y bcryptjs CDN)
+const _bcrypt = () => {
+    if (typeof dcodeIO !== 'undefined' && dcodeIO.bcrypt) return dcodeIO.bcrypt;
+    if (typeof bcrypt !== 'undefined') return bcrypt;
+    return null;
+};
+
+const bcryptHash = async (password) => {
+    const b = _bcrypt();
+    if (!b) return password; // fallback sin hash si la lib no cargó
+    const salt = await b.genSalt(10);
+    return await b.hash(password, salt);
+};
+
+const bcryptCompare = async (password, hash) => {
+    const b = _bcrypt();
+    if (!b) return password === hash;
+    return await b.compare(password, hash);
+};
+
 const initAuthPages = () => {
     const passInput = document.getElementById('password');
     const strengthBar = document.getElementById('strength-bar');
-    
+    const strengthLabel = document.getElementById('strength-label');
+
     if (passInput && strengthBar) {
         passInput.addEventListener('input', (e) => {
             const val = e.target.value;
@@ -1565,12 +1586,21 @@ const initAuthPages = () => {
             if (/[A-Z]/.test(val)) strength += 25;
             if (/[0-9]/.test(val)) strength += 25;
             if (/[^A-Za-z0-9]/.test(val)) strength += 25;
-            
+
             strengthBar.style.width = strength + '%';
-            if (strength <= 25) strengthBar.style.background = '#ff4757';
-            else if (strength <= 50) strengthBar.style.background = '#ffa502';
-            else if (strength <= 75) strengthBar.style.background = '#2ed573';
-            else strengthBar.style.background = 'var(--gold-primary)';
+            if (strength <= 25) {
+                strengthBar.style.background = '#ff4757';
+                if (strengthLabel) { strengthLabel.textContent = 'Debil'; strengthLabel.style.color = '#ff4757'; }
+            } else if (strength <= 50) {
+                strengthBar.style.background = '#ffa502';
+                if (strengthLabel) { strengthLabel.textContent = 'Regular'; strengthLabel.style.color = '#ffa502'; }
+            } else if (strength <= 75) {
+                strengthBar.style.background = '#2ed573';
+                if (strengthLabel) { strengthLabel.textContent = 'Fuerte'; strengthLabel.style.color = '#2ed573'; }
+            } else {
+                strengthBar.style.background = 'var(--gold-primary)';
+                if (strengthLabel) { strengthLabel.textContent = 'Muy Segura'; strengthLabel.style.color = 'var(--gold-primary)'; }
+            }
         });
     }
 
@@ -1591,18 +1621,20 @@ const initAuthPages = () => {
             const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
             const confirm = document.getElementById('confirm-password').value;
-            const roleSelect = document.getElementById('role');
+            const roleEl = document.getElementById('role');
             const adminCode = document.getElementById('admin-code') ? document.getElementById('admin-code').value.trim() : '';
             const terms = document.getElementById('terms');
             let valid = true;
 
             setFieldError('username', username.length >= 3 ? '' : 'El nombre debe tener al menos 3 caracteres.');
-            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electrónico válido.');
-            setFieldError('password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.');
-            setFieldError('confirm-password', password === confirm ? '' : 'Las contraseñas no coinciden.');
-            setFieldError('admin-code', roleSelect.value === 'admin' && adminCode !== ADMIN_SECRET_CODE ? 'Código administrador incorrecto.' : '');
-            setFieldError('terms', terms && terms.checked ? '' : 'Debes aceptar los términos y la política de privacidad.');
-            valid = username.length >= 3 && validateEmail(email) && password.length >= 8 && password === confirm && (!roleSelect || roleSelect.value !== 'admin' || adminCode === ADMIN_SECRET_CODE) && (!terms || terms.checked);
+            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electronico valido.');
+            setFieldError('password', password.length >= 8 ? '' : 'La contrasena debe tener al menos 8 caracteres.');
+            setFieldError('confirm-password', password === confirm ? '' : 'Las contrasenas no coinciden.');
+            setFieldError('admin-code', roleEl.value === 'admin' && adminCode !== ADMIN_SECRET_CODE ? 'Codigo administrador incorrecto.' : '');
+            setFieldError('terms', terms && terms.checked ? '' : 'Debes aceptar los terminos y la politica de privacidad.');
+            valid = username.length >= 3 && validateEmail(email) && password.length >= 8 && password === confirm
+                && (!roleEl || roleEl.value !== 'admin' || adminCode === ADMIN_SECRET_CODE)
+                && (!terms || terms.checked);
 
             if (!valid) {
                 showToast('Revisa los campos mencionados', 'error');
@@ -1612,16 +1644,26 @@ const initAuthPages = () => {
 
             const users = JSON.parse(localStorage.getItem('confort_users')) || [];
             if (users.find(u => u.email.toLowerCase() === email)) {
-                setFieldError('email', 'Este correo electrónico ya está registrado.');
-                showToast('El email ya está registrado', 'error');
+                setFieldError('email', 'Este correo electronico ya esta registrado.');
+                showToast('El email ya esta registrado', 'error');
                 return;
             }
 
-            const role = roleSelect.value === 'admin' ? 'admin' : 'cliente';
-            users.push({ username, email, password, role });
-            localStorage.setItem('confort_users', JSON.stringify(users));
-            showToast('Registro exitoso. Inicia sesión.');
-            setTimeout(() => window.location.href = 'login.html', 1500);
+            const submitBtn = registerForm.querySelector('[type="submit"]');
+            const origHTML = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cifrando contrasena...'; }
+
+            bcryptHash(password).then(hashedPassword => {
+                const role = roleEl.value === 'admin' ? 'admin' : 'cliente';
+                users.push({ username, email, password: hashedPassword, role, createdAt: new Date().toISOString() });
+                localStorage.setItem('confort_users', JSON.stringify(users));
+                if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cuenta creada!';
+                showToast('Cuenta creada con contrasena cifrada (bcrypt)');
+                setTimeout(() => window.location.href = 'login.html', 1600);
+            }).catch(() => {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
+                showToast('Error al crear la cuenta', 'error');
+            });
         });
     }
 
@@ -1631,28 +1673,80 @@ const initAuthPages = () => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
-            let valid = true;
-            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electrónico válido.');
-            setFieldError('password', password.length >= 8 ? '' : 'La contraseña debe tener al menos 8 caracteres.');
-            valid = validateEmail(email) && password.length >= 8;
-            if (!valid) { showToast('Revisa tus credenciales', 'error'); return; }
+            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electronico valido.');
+            setFieldError('password', password.length >= 1 ? '' : 'Ingresa tu contrasena.');
+            if (!validateEmail(email) || password.length < 1) { showToast('Revisa tus credenciales', 'error'); return; }
+
+            const submitBtn = loginForm.querySelector('[type="submit"]');
+            const origHTML = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...'; }
 
             const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            const user = users.find(u => u.email.toLowerCase() === email && u.password === password);
-            if (user) {
-                localStorage.setItem('confort_current_user', JSON.stringify({ email: user.email, username: user.username, role: user.role || 'cliente' }));
-                localStorage.setItem('confort_user_logged_in', 'true');
-                showToast('Inicio de sesión exitoso');
-                setTimeout(() => window.location.href = user.role === 'admin' ? 'admin.html' : 'dashboard.html', 1000);
+            const user = users.find(u => u.email.toLowerCase() === email);
+
+            if (!user) {
+                showToast('No existe una cuenta con ese correo', 'error');
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
+                loginForm.classList.add('shake');
+                setTimeout(() => loginForm.classList.remove('shake'), 600);
+                return;
+            }
+
+            const doLogin = (match) => {
+                if (match) {
+                    localStorage.setItem('confort_current_user', JSON.stringify({
+                        email: user.email, username: user.username,
+                        role: user.role || 'cliente', loginAt: new Date().toISOString()
+                    }));
+                    localStorage.setItem('confort_user_logged_in', 'true');
+                    const remember = document.getElementById('remember-me');
+                    if (remember && remember.checked) {
+                        localStorage.setItem('confort_remember_email', email);
+                    } else {
+                        localStorage.removeItem('confort_remember_email');
+                    }
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Bienvenido!';
+                    showToast('Bienvenido de vuelta, ' + user.username + ' !');
+                    setTimeout(() => window.location.replace(user.role === 'admin' ? 'admin.html' : 'dashboard.html'), 1000);
+                } else {
+                    showToast('Contrasena incorrecta', 'error');
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
+                    loginForm.classList.add('shake');
+                    setTimeout(() => loginForm.classList.remove('shake'), 600);
+                }
+            };
+
+            const isBcryptHash = user.password && user.password.startsWith('$2');
+            if (isBcryptHash) {
+                bcryptCompare(password, user.password).then(doLogin);
             } else {
-                showToast('Credenciales incorrectas', 'error');
+                const plainMatch = user.password === password;
+                if (plainMatch) {
+                    bcryptHash(password).then(hashed => {
+                        user.password = hashed;
+                        localStorage.setItem('confort_users', JSON.stringify(users));
+                        showToast('Contrasena actualizada a cifrado seguro', 'info');
+                        doLogin(true);
+                    });
+                } else {
+                    doLogin(false);
+                }
             }
         });
+
+        const savedEmail = localStorage.getItem('confort_remember_email');
+        if (savedEmail) {
+            const emailInput = document.getElementById('email');
+            if (emailInput) emailInput.value = savedEmail;
+            const rememberCheck = document.getElementById('remember-me');
+            if (rememberCheck) rememberCheck.checked = true;
+        }
     }
 
     document.querySelectorAll('.password-toggle').forEach(icon => {
         icon.addEventListener('click', function() {
             const input = this.previousElementSibling;
+            if (!input || input.tagName !== 'INPUT') return;
             if (input.type === 'password') {
                 input.type = 'text';
                 this.classList.replace('fa-eye-slash', 'fa-eye');
