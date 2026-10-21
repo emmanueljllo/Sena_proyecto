@@ -11,38 +11,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="auth-guard.js"></script>
     <style>
-        /* ─── Overrides específicos del admin ─── */
         body { margin: 0; font-family: 'Outfit', sans-serif; background: #080808; color: #fff; }
         * { box-sizing: border-box; }
-
-        /* Ocultar navbar global en admin */
         #navbar { display: none !important; }
 
-        /* Search input mini */
         .search-mini {
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px;
             padding: 0.45rem 1rem 0.45rem 2.2rem;
-            color: #fff; font-size: 0.85rem; outline: none; width: 200px;
+            color: #fff; font-size: 0.85rem; outline: none; width: 220px;
+            transition: all 0.2s;
+        }
+        .search-mini:focus {
+            border-color: var(--gold-primary, #d4af37);
+            background: rgba(255,255,255,0.09);
         }
         .search-mini::placeholder { color: rgba(255,255,255,0.3); }
         .search-mini-wrap { position: relative; }
-        .search-mini-wrap i { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.3); font-size: 0.85rem; }
+        .search-mini-wrap i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.35); font-size: 0.85rem; }
 
-        /* Live status pill */
         .live-pill {
-            display: flex; align-items: center; gap: 0.4rem;
+            display: flex; align-items: center; gap: 0.45rem;
             background: rgba(46,213,115,0.1); border: 1px solid rgba(46,213,115,0.25);
-            border-radius: 99px; padding: 0.3rem 0.75rem; font-size: 0.78rem; color: #2ed573;
+            border-radius: 99px; padding: 0.35rem 0.8rem; font-size: 0.78rem; color: #2ed573;
+            font-weight: 600;
         }
-        .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ed573; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ed573; animation: livePulse 1.5s infinite; }
+        @keyframes livePulse { 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:0.3; transform:scale(0.8);} }
 
-        /* Activity feed */
-        .activity-feed { max-height: 300px; overflow-y: auto; }
+        .activity-feed { max-height: 320px; overflow-y: auto; }
 
-        /* Product form modal override */
         .prod-modal-overlay {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
@@ -77,7 +76,6 @@
         .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-group-sm { margin-bottom: 1rem; }
 
-        /* Toggle switch for failover */
         .toggle-wrap { display: flex; align-items: center; gap: 0.75rem; }
         .toggle-switch { position: relative; width: 44px; height: 24px; cursor: pointer; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -85,9 +83,6 @@
         .toggle-slider::before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: 0.3s; }
         .toggle-switch input:checked + .toggle-slider { background: #d4af37; }
         .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-        /* Charts placeholder */
-        .mini-chart { background: rgba(255,255,255,0.03); border-radius: 10px; height: 80px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.2); font-size: 0.8rem; }
 
         select.form-input-dark option { background: #1a1a1a; }
     </style>
@@ -136,15 +131,17 @@
             </a>
             <a class="sidebar-nav-item" data-panel="panel-orders" href="#">
                 <i class="fa-solid fa-receipt"></i> Gestión de Pedidos
-                <span class="sidebar-nav-badge" id="pending-orders-badge" style="display:none;">0</span>
+                <span class="sidebar-nav-badge" id="sidebar-orders-badge">0</span>
             </a>
             <a class="sidebar-nav-item" data-panel="panel-users" href="#">
                 <i class="fa-solid fa-users"></i> Usuarios Registrados
+                <span class="sidebar-nav-badge" id="sidebar-users-badge">0</span>
             </a>
 
             <div class="sidebar-section-label">Auditoría</div>
             <a class="sidebar-nav-item" data-panel="panel-logs" href="#">
                 <i class="fa-solid fa-clock-rotate-left"></i> Logs e Incidentes
+                <span class="sidebar-nav-badge" id="sidebar-logs-badge" style="background:rgba(52,152,219,0.25); color:#3498db;">0</span>
             </a>
 
             <div class="sidebar-bottom">
@@ -171,17 +168,34 @@
                     <div class="admin-topbar-sub" id="topbar-sub">Supervisión de Continuidad de Negocio y Recuperación ante Desastres</div>
                 </div>
                 <div class="admin-topbar-actions">
-                    <div class="live-pill"><span class="live-dot"></span> Sistema Online</div>
+                    <div class="live-pill"><span class="live-dot"></span> Sincronización en Vivo</div>
+                    
+                    <!-- Notification Bell Dropdown -->
+                    <div class="notif-bell-wrap" id="notif-bell-wrap">
+                        <button class="notif-bell-btn" id="notif-bell-btn" onclick="toggleNotifDropdown()" title="Notificaciones de usuarios y pedidos">
+                            <i class="fa-solid fa-bell"></i>
+                            <span class="notif-badge" id="notif-bell-badge" style="display:none;">0</span>
+                        </button>
+                        <div class="notif-dropdown" id="notif-dropdown" style="display:none;">
+                            <div class="notif-dropdown-header">
+                                <span><i class="fa-solid fa-bolt" style="color:var(--gold-primary);"></i> Notificaciones en Vivo</span>
+                                <button class="btn-clear-notifs" onclick="markAllNotificationsAsRead()">Marcar leídas</button>
+                            </div>
+                            <div class="notif-dropdown-list" id="notif-dropdown-list">
+                                <div class="notif-empty">No hay notificaciones nuevas</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="search-mini-wrap">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" class="search-mini" placeholder="Buscar...">
+                        <input type="text" class="search-mini" id="global-admin-search" placeholder="Buscar...">
                     </div>
                 </div>
             </div>
 
-            <!-- ══ Tab: BCP ══ -->
+            <!-- ══ Tab 1: BCP ══ -->
             <div class="admin-tab-panel active" id="panel-bcp">
-                <!-- KPI Cards -->
                 <div class="kpi-grid">
                     <div class="kpi-card">
                         <div class="kpi-card-label"><i class="fa-solid fa-heart-pulse"></i> Estado Servidor</div>
@@ -210,7 +224,6 @@
                     </div>
                 </div>
 
-                <!-- BCP Actions + Failover -->
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
                     <div class="admin-card">
                         <div class="admin-card-header">
@@ -254,14 +267,13 @@
                             <div class="bcp-progress-value" style="color:var(--gold-primary,#d4af37);">100%</div>
                         </div>
                         <div class="bcp-progress-row">
-                            <div class="bcp-progress-label">API Interna</div>
-                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:95%; background:#ffa502;"></div></div>
-                            <div class="bcp-progress-value" style="color:#ffa502;">95%</div>
+                            <div class="bcp-progress-label">API Cifrada (Auth)</div>
+                            <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:100%; background:#2ed573;"></div></div>
+                            <div class="bcp-progress-value" style="color:#2ed573;">100%</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Infrastructure Table -->
                 <div class="admin-card">
                     <div class="admin-card-header">
                         <div class="admin-card-title"><i class="fa-solid fa-network-wired"></i> Monitoreo de Infraestructura Crítica</div>
@@ -283,7 +295,7 @@
                                     <td><strong>Base de Datos Clientes & Pedidos</strong></td>
                                     <td><span class="status-dot green"></span>Sincronizado</td>
                                     <td>1 hora</td><td>15 min</td>
-                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy 09:00</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">En tiempo real</td>
                                     <td><button class="btn-micro blue" onclick="runDrpTest('Base de Datos')"><i class="fa-solid fa-play"></i> Test DRP</button></td>
                                 </tr>
                                 <tr>
@@ -308,10 +320,10 @@
                                     <td><button class="btn-micro blue" onclick="runDrpTest('Almacén Assets')"><i class="fa-solid fa-play"></i> Test DRP</button></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Cifrado bcrypt (Auth)</strong></td>
-                                    <td><span class="status-dot green"></span>Activo</td>
+                                    <td><strong>Cifrado bcrypt (Seguridad Auth)</strong></td>
+                                    <td><span class="status-dot green"></span>Activo (Cost 10)</td>
                                     <td>Inmediato</td><td>N/A</td>
-                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Hoy (nuevo)</td>
+                                    <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">Verificado</td>
                                     <td><button class="btn-micro green" onclick="runDrpTest('Cifrado bcrypt')"><i class="fa-solid fa-lock"></i> Verificar</button></td>
                                 </tr>
                             </tbody>
@@ -320,39 +332,39 @@
                 </div>
             </div>
 
-            <!-- ══ Tab: Analytics ══ -->
+            <!-- ══ Tab 2: Analytics ══ -->
             <div class="admin-tab-panel" id="panel-analytics">
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-card-label"><i class="fa-solid fa-dollar-sign"></i> Ventas del Mes</div>
-                        <div class="kpi-card-value">$12,480</div>
-                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> +18% vs mes anterior</div>
+                        <div class="kpi-card-label"><i class="fa-solid fa-dollar-sign"></i> Ingresos Totales</div>
+                        <div class="kpi-card-value" id="analytics-revenue-kpi" style="color:#2ed573;">$0.00</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> Ventas acumuladas</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-card-label"><i class="fa-solid fa-cart-shopping"></i> Pedidos Totales</div>
-                        <div class="kpi-card-value" id="total-orders-kpi">—</div>
-                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> En crecimiento</div>
+                        <div class="kpi-card-value" id="total-orders-kpi">0</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> Órdenes en plataforma</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-card-label"><i class="fa-solid fa-users"></i> Usuarios Registrados</div>
-                        <div class="kpi-card-value" id="total-users-kpi">—</div>
-                        <div class="kpi-card-change"><i class="fa-solid fa-arrow-up"></i> Nuevos esta semana</div>
+                        <div class="kpi-card-value" id="total-users-kpi">0</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-user-plus"></i> Comunidad VIP</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-card-label"><i class="fa-solid fa-boxes-stacked"></i> Productos</div>
-                        <div class="kpi-card-value" id="total-products-kpi">—</div>
-                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> Catálogo activo</div>
+                        <div class="kpi-card-label"><i class="fa-solid fa-boxes-stacked"></i> Productos en Catálogo</div>
+                        <div class="kpi-card-value" id="total-products-kpi">13</div>
+                        <div class="kpi-card-change"><i class="fa-solid fa-circle-check"></i> Inventario activo</div>
                     </div>
                 </div>
                 <div class="admin-card">
                     <div class="admin-card-header">
-                        <div class="admin-card-title"><i class="fa-solid fa-chart-bar"></i> Top Productos más Vendidos</div>
+                        <div class="admin-card-title"><i class="fa-solid fa-chart-bar"></i> Top Productos más Populares</div>
                     </div>
                     <div id="top-products-list"></div>
                 </div>
             </div>
 
-            <!-- ══ Tab: Catálogo CRUD ══ -->
+            <!-- ══ Tab 3: Catálogo CRUD ══ -->
             <div class="admin-tab-panel" id="panel-catalog">
                 <div class="admin-card">
                     <div class="admin-card-header">
@@ -375,11 +387,12 @@
                 </div>
             </div>
 
-            <!-- ══ Tab: Pedidos ══ -->
+            <!-- ══ Tab 4: Pedidos ══ -->
             <div class="admin-tab-panel" id="panel-orders">
                 <div class="admin-card">
                     <div class="admin-card-header">
                         <div class="admin-card-title"><i class="fa-solid fa-receipt"></i> Gestión de Pedidos Globales</div>
+                        <button class="btn-micro gold" onclick="renderAdminOrders()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="admin-table">
@@ -395,18 +408,52 @@
                 </div>
             </div>
 
-            <!-- ══ Tab: Usuarios ══ -->
+            <!-- ══ Tab 5: Usuarios Registrados (MEJORADO) ══ -->
             <div class="admin-tab-panel" id="panel-users">
+                <!-- User Summary Cards -->
+                <div class="users-summary-grid">
+                    <div class="users-summary-card">
+                        <div class="label"><i class="fa-solid fa-users" style="color:var(--gold-primary);"></i> Total Usuarios</div>
+                        <div class="val" id="users-kpi-total">0</div>
+                    </div>
+                    <div class="users-summary-card">
+                        <div class="label"><i class="fa-solid fa-user-plus" style="color:#2ed573;"></i> Registrados Hoy</div>
+                        <div class="val" id="users-kpi-today" style="color:#2ed573;">0</div>
+                    </div>
+                    <div class="users-summary-card">
+                        <div class="label"><i class="fa-regular fa-user" style="color:#3498db;"></i> Clientes</div>
+                        <div class="val" id="users-kpi-clients" style="color:#3498db;">0</div>
+                    </div>
+                    <div class="users-summary-card">
+                        <div class="label"><i class="fa-solid fa-shield-halved" style="color:var(--gold-primary);"></i> Administradores</div>
+                        <div class="val" id="users-kpi-admins" style="color:var(--gold-primary);">0</div>
+                    </div>
+                </div>
+
                 <div class="admin-card">
                     <div class="admin-card-header">
-                        <div class="admin-card-title"><i class="fa-solid fa-users"></i> Usuarios Registrados</div>
+                        <div class="admin-card-title">
+                            <i class="fa-solid fa-users"></i> Listado de Usuarios y Auditoría de Cuentas
+                        </div>
+                        <div style="display:flex; gap:0.75rem; align-items:center;">
+                            <div class="search-mini-wrap">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" class="search-mini" id="users-table-search" placeholder="Buscar usuario o email..." oninput="filterAdminUsers(this.value)">
+                            </div>
+                            <button class="btn-micro gold" onclick="renderAdminUsers()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                        </div>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th>Usuario</th><th>Email</th><th>Rol</th>
-                                    <th>Contraseña Cifrada</th><th>Creado</th>
+                                    <th>Usuario</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Rol</th>
+                                    <th>Pedidos / Total</th>
+                                    <th>Seguridad</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-users-tbody"></tbody>
@@ -415,18 +462,18 @@
                 </div>
             </div>
 
-            <!-- ══ Tab: Logs ══ -->
+            <!-- ══ Tab 6: Logs e Incidentes ══ -->
             <div class="admin-tab-panel" id="panel-logs">
                 <div class="admin-card">
                     <div class="admin-card-header">
-                        <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría de Continuidad (BCP)</div>
-                        <button class="btn-micro gold" onclick="renderAdminLogs()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                        <div class="admin-card-title"><i class="fa-solid fa-clock-rotate-left"></i> Auditoría en Vivo (BCP & Actividad)</div>
+                        <button class="btn-micro gold" onclick="renderAdminLogs(); renderAdminLogsFeed();"><i class="fa-solid fa-rotate"></i> Actualizar</button>
                     </div>
                     <div class="activity-feed" id="admin-logs-feed"></div>
                 </div>
                 <div class="admin-card">
                     <div class="admin-card-header">
-                        <div class="admin-card-title"><i class="fa-solid fa-table"></i> Tabla de Eventos</div>
+                        <div class="admin-card-title"><i class="fa-solid fa-table"></i> Tabla Histórica de Eventos</div>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="admin-table">
@@ -495,12 +542,13 @@
 
     <script src="script.js"></script>
     <script>
+        let currentAdminUsersFilter = '';
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Set admin name
             const cu = JSON.parse(localStorage.getItem('confort_current_user')) || {};
             if (cu.username) document.getElementById('admin-username-display').textContent = cu.username;
 
-            // Sidebar navigation
+            // Tab Switching
             const navItems = document.querySelectorAll('.sidebar-nav-item[data-panel]');
             const panels = document.querySelectorAll('.admin-tab-panel');
             const topbarTitle = document.getElementById('topbar-title');
@@ -510,9 +558,9 @@
                 'panel-bcp': ['Centro de Mando BCP', 'Supervisión de Continuidad de Negocio y Recuperación ante Desastres'],
                 'panel-analytics': ['Analítica y Ventas', 'Métricas en tiempo real de la tienda Confort Market'],
                 'panel-catalog': ['Gestión de Catálogo', 'Crea, edita o elimina productos del inventario'],
-                'panel-orders': ['Gestión de Pedidos', 'Revisa y actualiza el estado de las órdenes'],
-                'panel-users': ['Usuarios Registrados', 'Listado de todos los usuarios con contraseñas cifradas con bcrypt'],
-                'panel-logs': ['Logs e Incidentes BCP', 'Registro inmutable de simulacros, respaldos e incidentes']
+                'panel-orders': ['Gestión de Pedidos', 'Revisa y actualiza el estado de las órdenes globales'],
+                'panel-users': ['Usuarios Registrados', 'Auditoría en vivo de usuarios, roles y contraseñas cifradas'],
+                'panel-logs': ['Logs e Incidentes BCP', 'Registro inmutable de registros, pedidos, respaldos y simulacros']
             };
 
             navItems.forEach(item => {
@@ -535,14 +583,363 @@
                 });
             });
 
+            // Close notification dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                const wrap = document.getElementById('notif-bell-wrap');
+                if (wrap && !wrap.contains(e.target)) {
+                    const dd = document.getElementById('notif-dropdown');
+                    if (dd) dd.style.display = 'none';
+                }
+            });
+
+            // Initial render
+            refreshAllAdminData();
+
+            // Setup real-time listener across tabs and windows
+            setupRealtimeAdminListener();
+        });
+
+        // ─── Real-Time Sync & Audio ───
+        function playChimeSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.18, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch(e) {}
+        }
+
+        function setupRealtimeAdminListener() {
+            const handleEvent = (data) => {
+                playChimeSound();
+                if (data.notification) {
+                    showToast(`${data.notification.title} — ${data.notification.desc}`, 'success');
+                }
+                refreshAllAdminData();
+            };
+
+            // 1. Escuchar cambios de localStorage desde otra pestaña
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'confort_admin_sync_event' && e.newValue) {
+                    try {
+                        const parsed = JSON.parse(e.newValue);
+                        handleEvent(parsed);
+                    } catch(err) {}
+                } else if (e.key === 'confort_users' || e.key === 'confort_bcp_logs') {
+                    refreshAllAdminData();
+                }
+            });
+
+            // 2. Escuchar BroadcastChannel
+            try {
+                const channel = new BroadcastChannel('confort_admin_channel');
+                channel.onmessage = (event) => {
+                    if (event.data) handleEvent(event.data);
+                };
+            } catch(e) {}
+        }
+
+        function refreshAllAdminData() {
             renderAdminProducts();
             renderAdminOrders();
             renderAdminLogs();
             renderAdminLogsFeed();
             renderAnalytics();
             renderAdminUsers();
-        });
+            updateSidebarBadges();
+            renderNotificationsDropdown();
+        }
 
+        // ─── Notification Dropdown ───
+        window.toggleNotifDropdown = () => {
+            const dd = document.getElementById('notif-dropdown');
+            if (!dd) return;
+            const isVisible = dd.style.display === 'block';
+            dd.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) renderNotificationsDropdown();
+        };
+
+        window.markAllNotificationsAsRead = () => {
+            const notifs = JSON.parse(localStorage.getItem('confort_admin_notifications')) || [];
+            notifs.forEach(n => n.unread = false);
+            localStorage.setItem('confort_admin_notifications', JSON.stringify(notifs));
+            renderNotificationsDropdown();
+            showToast('Notificaciones marcadas como leídas', 'info');
+        };
+
+        function renderNotificationsDropdown() {
+            const list = document.getElementById('notif-dropdown-list');
+            const badge = document.getElementById('notif-bell-badge');
+            if (!list) return;
+
+            const notifs = JSON.parse(localStorage.getItem('confort_admin_notifications')) || [];
+            const unreadCount = notifs.filter(n => n.unread).length;
+
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            if (notifs.length === 0) {
+                list.innerHTML = '<div class="notif-empty"><i class="fa-regular fa-bell-slash" style="font-size:1.5rem; display:block; margin-bottom:0.5rem; opacity:0.4;"></i>No hay notificaciones recientes</div>';
+                return;
+            }
+
+            list.innerHTML = notifs.slice(0, 15).map(n => {
+                const iconClass = n.type === 'user' ? 'fa-user-plus' : n.type === 'order' ? 'fa-cart-shopping' : 'fa-shield-halved';
+                const typeClass = n.type === 'user' ? 'user' : n.type === 'order' ? 'order' : 'security';
+                return `
+                    <div class="notif-item ${n.unread ? 'unread' : ''}">
+                        <div class="notif-icon-circle ${typeClass}"><i class="fa-solid ${iconClass}"></i></div>
+                        <div class="notif-content">
+                            <div class="notif-title">${n.title}</div>
+                            <div class="notif-desc">${n.desc}</div>
+                            <div class="notif-time"><i class="fa-regular fa-clock"></i> ${n.dateStr || 'Reciente'}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ─── Sidebar Badges ───
+        function updateSidebarBadges() {
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+            
+            // Contar pedidos
+            let ordersCount = 0;
+            users.forEach(u => {
+                const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+                ordersCount += userOrders.length;
+            });
+
+            const usersBadge = document.getElementById('sidebar-users-badge');
+            const ordersBadge = document.getElementById('sidebar-orders-badge');
+            const logsBadge = document.getElementById('sidebar-logs-badge');
+
+            if (usersBadge) usersBadge.textContent = users.length;
+            if (ordersBadge) ordersBadge.textContent = ordersCount;
+            if (logsBadge) logsBadge.textContent = logs.length;
+        }
+
+        // ─── Users Management ───
+        window.filterAdminUsers = (query) => {
+            currentAdminUsersFilter = query.toLowerCase().trim();
+            renderAdminUsers();
+        };
+
+        function renderAdminUsers() {
+            const tbody = document.getElementById('admin-users-tbody');
+            if (!tbody) return;
+
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const now = new Date();
+            const isToday = (dateString) => {
+                if (!dateString) return false;
+                const d = new Date(dateString);
+                return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            };
+
+            // Actualizar KPIs de usuarios
+            const todayCount = users.filter(u => isToday(u.createdAt)).length;
+            const clientCount = users.filter(u => u.role !== 'admin').length;
+            const adminCount = users.filter(u => u.role === 'admin').length;
+
+            const kpiTotal = document.getElementById('users-kpi-total');
+            const kpiToday = document.getElementById('users-kpi-today');
+            const kpiClients = document.getElementById('users-kpi-clients');
+            const kpiAdmins = document.getElementById('users-kpi-admins');
+
+            if (kpiTotal) kpiTotal.textContent = users.length;
+            if (kpiToday) kpiToday.textContent = todayCount;
+            if (kpiClients) kpiClients.textContent = clientCount;
+            if (kpiAdmins) kpiAdmins.textContent = adminCount;
+
+            // Filtrado
+            const filteredUsers = users.filter(u => {
+                if (!currentAdminUsersFilter) return true;
+                const matchName = (u.username || '').toLowerCase().includes(currentAdminUsersFilter);
+                const matchEmail = (u.email || '').toLowerCase().includes(currentAdminUsersFilter);
+                return matchName || matchEmail;
+            });
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:rgba(255,255,255,0.3); padding:2.5rem;">No se encontraron usuarios coincidentes</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredUsers.map(u => {
+                const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+                const totalSpent = userOrders.reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
+                const initial = (u.username || u.email || 'U').charAt(0).toUpperCase();
+                const isBcrypt = u.password && u.password.startsWith('$2');
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="user-meta-cell">
+                                <div class="user-avatar-circle">${initial}</div>
+                                <div class="user-info-text">
+                                    <strong>${u.username || 'Sin Nombre'}</strong>
+                                    <small>${u.role === 'admin' ? 'Administrador BCP' : 'Cliente Confort'}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:rgba(255,255,255,0.75);">${u.email}</td>
+                        <td>
+                            <span class="status-badge" style="background:${u.role==='admin'?'rgba(212,175,55,0.18)':'rgba(52,152,219,0.18)'}; color:${u.role==='admin'?'var(--gold-primary,#d4af37)':'#3498db'}; font-weight:700;">
+                                <i class="fa-solid ${u.role==='admin'?'fa-shield-halved':'fa-user'}"></i> ${u.role === 'admin' ? 'Admin' : 'Cliente'}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color:${userOrders.length > 0 ? '#2ed573' : 'rgba(255,255,255,0.4)'};">${userOrders.length} pedido(s)</strong>
+                            <div style="font-size:0.75rem; color:rgba(255,255,255,0.4);">${formatPrice(totalSpent)}</div>
+                        </td>
+                        <td>
+                            ${isBcrypt ? 
+                                '<span class="status-badge" style="background:rgba(46,213,115,0.12); color:#2ed573;"><i class="fa-solid fa-lock"></i> bcrypt (cost 10)</span>' : 
+                                '<span class="status-badge" style="background:rgba(255,165,2,0.12); color:#ffa502;"><i class="fa-solid fa-triangle-exclamation"></i> Migración pendiente</span>'
+                            }
+                        </td>
+                        <td style="color:rgba(255,255,255,0.4); font-size:0.8rem;">
+                            ${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Anterior'}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:0.4rem;">
+                                <button class="btn-micro ${u.role === 'admin' ? 'blue' : 'gold'}" onclick="toggleUserRole('${u.email}')" title="Alternar entre Cliente y Administrador">
+                                    <i class="fa-solid fa-repeat"></i> ${u.role === 'admin' ? 'Hacer Cliente' : 'Hacer Admin'}
+                                </button>
+                                <button class="btn-micro red" onclick="deleteUserByAdmin('${u.email}')" title="Eliminar usuario">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.toggleUserRole = (email) => {
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+            if (!user) return;
+
+            const oldRole = user.role;
+            user.role = user.role === 'admin' ? 'cliente' : 'admin';
+            localStorage.setItem('confort_users', JSON.stringify(users));
+
+            // Log BCP
+            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+            logs.unshift({
+                date: new Date().toLocaleString(),
+                type: 'seguridad_rol',
+                status: 'warning',
+                desc: `El rol de ${user.username} (${user.email}) fue cambiado de ${oldRole} a ${user.role}.`
+            });
+            localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
+
+            showToast(`Rol de ${user.username} cambiado a ${user.role}`);
+            refreshAllAdminData();
+        };
+
+        window.deleteUserByAdmin = (email) => {
+            const currentAdmin = JSON.parse(localStorage.getItem('confort_current_user')) || {};
+            if (currentAdmin.email && currentAdmin.email.toLowerCase() === email.toLowerCase()) {
+                showToast('No puedes eliminar tu propia cuenta de administrador', 'error');
+                return;
+            }
+
+            if (!confirm(`¿Estás seguro de que deseas eliminar la cuenta de ${email}? Esta acción no se puede deshacer.`)) {
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            users = users.filter(u => u.email.toLowerCase() !== email.toLowerCase());
+            localStorage.setItem('confort_users', JSON.stringify(users));
+
+            // Log BCP
+            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+            logs.unshift({
+                date: new Date().toLocaleString(),
+                type: 'usuario_eliminado',
+                status: 'error',
+                desc: `El usuario ${email} fue eliminado del sistema por el Administrador.`
+            });
+            localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
+
+            showToast(`Usuario ${email} eliminado correctamente`, 'info');
+            refreshAllAdminData();
+        };
+
+        // ─── Logs Feed & Table ───
+        function renderAdminLogsFeed() {
+            const feed = document.getElementById('admin-logs-feed');
+            if (!feed) return;
+            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [
+                { type:'success', icon:'fa-circle-check', title:'Sistema iniciado correctamente', time:'Hoy 06:00', desc:'Servidor principal online. Sincronización BCP activa.' }
+            ];
+            feed.innerHTML = logs.slice(0, 10).map(l => {
+                const icon = l.type === 'nuevo_usuario' ? 'fa-user-plus' : l.type === 'pedido_nuevo' ? 'fa-cart-shopping' : (l.icon || 'fa-circle-check');
+                const statusType = l.status === 'error' ? 'error' : l.status === 'warning' ? 'warning' : 'success';
+                return `
+                    <div class="log-entry">
+                        <div class="log-icon ${statusType}"><i class="fa-solid ${icon}"></i></div>
+                        <div>
+                            <div class="log-event-name">${l.title || l.type.toUpperCase()}</div>
+                            <div class="log-event-time">${l.date || l.time || 'Reciente'}</div>
+                            <div class="log-event-desc">${l.desc}</div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // ─── Analytics ───
+        function renderAnalytics() {
+            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+            const prods = JSON.parse(localStorage.getItem('confort_products')) || [];
+
+            let allOrders = [];
+            let totalRevenue = 0;
+            users.forEach(u => {
+                const uOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+                allOrders = allOrders.concat(uOrders);
+                uOrders.forEach(o => totalRevenue += (Number(o.total) || 0));
+            });
+
+            const revEl = document.getElementById('analytics-revenue-kpi');
+            const totalOrdersKpi = document.getElementById('total-orders-kpi');
+            const totalUsersKpi = document.getElementById('total-users-kpi');
+            const totalProdsKpi = document.getElementById('total-products-kpi');
+
+            if (revEl) revEl.textContent = formatPrice(totalRevenue);
+            if (totalOrdersKpi) totalOrdersKpi.textContent = allOrders.length;
+            if (totalUsersKpi) totalUsersKpi.textContent = users.length;
+            if (totalProdsKpi) totalProdsKpi.textContent = prods.length;
+
+            const topList = document.getElementById('top-products-list');
+            if (topList) {
+                topList.innerHTML = prods.slice(0, 5).map((p, i) => `
+                    <div class="bcp-progress-row">
+                        <div class="bcp-progress-label" style="font-size:0.82rem;">${i+1}. ${p.name}</div>
+                        <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:${Math.max(15, 85 - i*14)}%; background:var(--gold-primary,#d4af37);"></div></div>
+                        <div class="bcp-progress-value" style="color:var(--gold-primary,#d4af37);">${p.reviews || 0}</div>
+                    </div>`).join('');
+            }
+        }
+
+        // ─── BCP Failover Toggle ───
         window.toggleBcpFailoverFromToggle = (checkbox) => {
             const label = document.getElementById('failover-label');
             if (checkbox.checked) {
@@ -551,7 +948,7 @@
                 document.getElementById('bcp-banner').style.display = 'flex';
                 document.getElementById('bcp-server-status').textContent = 'Servidor Respaldo';
                 document.getElementById('bcp-server-status').style.color = '#ffa502';
-                showToast('Modo contingencia activado', 'error');
+                showToast('Modo contingencia BCP activado', 'error');
             } else {
                 label.textContent = 'Failover Inactivo';
                 label.style.color = '';
@@ -563,75 +960,11 @@
             localStorage.setItem('bcp_failover', checkbox.checked ? 'true' : 'false');
         };
 
-        // Restore failover state
         if (localStorage.getItem('bcp_failover') === 'true') {
             document.addEventListener('DOMContentLoaded', () => {
                 const tog = document.getElementById('failover-toggle');
                 if (tog) { tog.checked = true; toggleBcpFailoverFromToggle(tog); }
             });
-        }
-
-        function renderAdminLogsFeed() {
-            const feed = document.getElementById('admin-logs-feed');
-            if (!feed) return;
-            const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [
-                { type:'success', icon:'fa-circle-check', title:'Sistema iniciado correctamente', time:'Hoy 06:00', desc:'Servidor principal online. Todos los servicios operativos.' },
-                { type:'info', icon:'fa-database', title:'Backup automático completado', time:'Hoy 06:15', desc:'Se realizó respaldo incremental de la base de datos. 0 errores.' },
-                { type:'warning', icon:'fa-triangle-exclamation', title:'Pico de tráfico detectado', time:'Hoy 10:30', desc:'Anti-DDoS absorbió 1,200 req/s. Sin impacto al usuario.' },
-                { type:'success', icon:'fa-lock', title:'bcrypt activado en autenticación', time:'Hoy (nuevo)', desc:'Cifrado de contraseñas mejorado a bcrypt cost-10. Usuarios migrados automáticamente.' },
-                { type:'info', icon:'fa-file-pdf', title:'Informe BCP generado', time:'Ayer 17:00', desc:'Informe ISO 22301 descargado por el administrador.' }
-            ];
-            feed.innerHTML = logs.map(l => `
-                <div class="log-entry">
-                    <div class="log-icon ${l.type}"><i class="fa-solid ${l.icon}"></i></div>
-                    <div>
-                        <div class="log-event-name">${l.title}</div>
-                        <div class="log-event-time">${l.time}</div>
-                        <div class="log-event-desc">${l.desc}</div>
-                    </div>
-                </div>`).join('');
-        }
-
-        function renderAdminUsers() {
-            const tbody = document.getElementById('admin-users-tbody');
-            if (!tbody) return;
-            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            if (!users.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.3); padding:2rem;">No hay usuarios registrados aún</td></tr>';
-                return;
-            }
-            tbody.innerHTML = users.map(u => `
-                <tr>
-                    <td><strong>${u.username}</strong></td>
-                    <td style="color:rgba(255,255,255,0.6);">${u.email}</td>
-                    <td><span class="status-badge" style="background:${u.role==='admin'?'rgba(212,175,55,0.15)':'rgba(52,152,219,0.15)'}; color:${u.role==='admin'?'var(--gold-primary,#d4af37)':'#3498db'};">${u.role}</span></td>
-                    <td style="font-family:monospace; font-size:0.72rem; color:${u.password?.startsWith('$2')?'#2ed573':'#ffa502'};">
-                        ${u.password?.startsWith('$2') ? '<i class="fa-solid fa-lock" style="margin-right:0.3rem;"></i>bcrypt' : '<i class="fa-solid fa-triangle-exclamation" style="margin-right:0.3rem;"></i>texto plano'}
-                    </td>
-                    <td style="color:rgba(255,255,255,0.35); font-size:0.8rem;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
-                </tr>`).join('');
-        }
-
-        function renderAnalytics() {
-            const orders = JSON.parse(localStorage.getItem('confort_orders')) || [];
-            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            const prods = JSON.parse(localStorage.getItem('confort_products')) || [];
-            const totalOrdersKpi = document.getElementById('total-orders-kpi');
-            const totalUsersKpi = document.getElementById('total-users-kpi');
-            const totalProdsKpi = document.getElementById('total-products-kpi');
-            if (totalOrdersKpi) totalOrdersKpi.textContent = orders.length;
-            if (totalUsersKpi) totalUsersKpi.textContent = users.length;
-            if (totalProdsKpi) totalProdsKpi.textContent = prods.length;
-
-            const topList = document.getElementById('top-products-list');
-            if (topList) {
-                topList.innerHTML = prods.slice(0,5).map((p, i) => `
-                    <div class="bcp-progress-row">
-                        <div class="bcp-progress-label" style="font-size:0.82rem;">${i+1}. ${p.name}</div>
-                        <div class="bcp-progress-bar"><div class="bcp-progress-fill" style="width:${80 - i*12}%; background:var(--gold-primary,#d4af37);"></div></div>
-                        <div class="bcp-progress-value" style="color:var(--gold-primary,#d4af37);">${p.reviews || 0}</div>
-                    </div>`).join('');
-            }
         }
     </script>
 </body>

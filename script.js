@@ -87,6 +87,54 @@ const showToast = (message, type = 'success') => {
     }, 3000);
 };
 
+// --- Notificaciones en Tiempo Real y Logs BCP para el Admin ---
+window.notifyAdminEvent = (event) => {
+    try {
+        // 1. Guardar en Logs BCP
+        const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+        logs.unshift({
+            date: new Date().toLocaleString(),
+            type: event.type,
+            status: event.status || 'success',
+            desc: event.desc
+        });
+        if (logs.length > 60) logs.pop();
+        localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
+
+        // 2. Guardar en Notificaciones del Admin
+        const notifications = JSON.parse(localStorage.getItem('confort_admin_notifications')) || [];
+        const notifItem = {
+            id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            title: event.title,
+            desc: event.desc,
+            type: event.category || 'info',
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unread: true
+        };
+        notifications.unshift(notifItem);
+        if (notifications.length > 40) notifications.pop();
+        localStorage.setItem('confort_admin_notifications', JSON.stringify(notifications));
+
+        // 3. Emitir evento cross-tab para actualizar el panel de admin en vivo
+        const triggerData = {
+            event: event.type,
+            data: event.data,
+            notification: notifItem,
+            time: Date.now()
+        };
+        localStorage.setItem('confort_admin_sync_event', JSON.stringify(triggerData));
+
+        try {
+            const channel = new BroadcastChannel('confort_admin_channel');
+            channel.postMessage(triggerData);
+            channel.close();
+        } catch (e) {}
+    } catch(err) {
+        console.warn('Error en notifyAdminEvent:', err);
+    }
+};
+
 // --- Navbar & UI Global ---
 document.addEventListener('DOMContentLoaded', () => {
     // Loading Screen
@@ -601,7 +649,18 @@ const initCheckoutPage = () => {
 
             orders.unshift(newOrder);
             localStorage.setItem(userOrdersKey, JSON.stringify(orders));
-            localStorage.setItem('confort_last_order', JSON.stringify(newOrder));
+                        localStorage.setItem('confort_last_order', JSON.stringify(newOrder));
+
+            // Notificar al panel de administracion en tiempo real
+            if (typeof window.notifyAdminEvent === 'function') {
+                window.notifyAdminEvent({
+                    type: 'pedido_nuevo',
+                    category: 'order',
+                    title: '¡Nuevo Pedido Recibido!',
+                    desc: 'Pedido ' + newOrder.id + ' por ' + formatPrice(newOrder.total) + ' de ' + (newOrder.customerName || 'Cliente') + '.',
+                    data: newOrder
+                });
+            }
 
             // Clear cart
             cart = [];
@@ -1657,6 +1716,18 @@ const initAuthPages = () => {
                 const role = roleEl.value === 'admin' ? 'admin' : 'cliente';
                 users.push({ username, email, password: hashedPassword, role, createdAt: new Date().toISOString() });
                 localStorage.setItem('confort_users', JSON.stringify(users));
+
+                // 🔔 Notificar al panel de administración en tiempo real
+                if (typeof window.notifyAdminEvent === 'function') {
+                    window.notifyAdminEvent({
+                        type: 'nuevo_usuario',
+                        category: 'user',
+                        title: '¡Nuevo Usuario Registrado!',
+                        desc: 'El usuario \"' + username + '\" (' + email + ') se ha registrado con rol ' + role + '. Cifrado bcrypt activo.',
+                        data: { username: username, email: email, role: role }
+                    });
+                }
+
                 if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cuenta creada!';
                 showToast('Cuenta creada con contrasena cifrada (bcrypt)');
                 setTimeout(() => window.location.href = 'login.html', 1600);
