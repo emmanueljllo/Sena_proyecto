@@ -690,6 +690,11 @@ const initCheckoutPage = () => {
             localStorage.setItem(userOrdersKey, JSON.stringify(orders));
                         localStorage.setItem('confort_last_order', JSON.stringify(newOrder));
 
+            // Guardar en la nube Firebase (Google Cloud) en tiempo real
+            if (typeof window.cloudSaveOrder === 'function') {
+                window.cloudSaveOrder(newOrder);
+            }
+
             // Notificar al panel de administracion en tiempo real
             if (typeof window.notifyAdminEvent === 'function') {
                 window.notifyAdminEvent({
@@ -1753,8 +1758,15 @@ const initAuthPages = () => {
 
             bcryptHash(password).then(hashedPassword => {
                 const role = roleEl.value === 'admin' ? 'admin' : 'cliente';
-                users.push({ username, email, password: hashedPassword, role, createdAt: new Date().toISOString() });
-                localStorage.setItem('confort_users', JSON.stringify(users));
+                const newUser = { username, email, password: hashedPassword, role, createdAt: new Date().toISOString() };
+                
+                // Guardar en la nube Firebase (Google Cloud) + Local
+                if (typeof window.cloudSaveUser === 'function') {
+                    window.cloudSaveUser(newUser);
+                } else {
+                    users.push(newUser);
+                    localStorage.setItem('confort_users', JSON.stringify(users));
+                }
 
                 // 🔔 Notificar al panel de administración en tiempo real
                 if (typeof window.notifyAdminEvent === 'function') {

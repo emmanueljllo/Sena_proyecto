@@ -540,6 +540,11 @@
         </div>
     </div>
 
+    <!-- Firebase Realtime Database SDK (Google Cloud) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-db.js"></script>
+
     <script src="script.js"></script>
     <script>
         let currentAdminUsersFilter = '';
@@ -645,6 +650,27 @@
                     if (event.data) handleEvent(event.data);
                 };
             } catch(e) {}
+
+            // 3. 🌐 Escuchar Firebase Realtime Database desde CUALQUIER COMPUTADOR / CELULAR
+            if (typeof cloudListenNotifications === 'function') {
+                cloudListenNotifications((notif) => {
+                    handleEvent({ notification: notif });
+                });
+            }
+            if (typeof cloudListenUsers === 'function') {
+                cloudListenUsers(() => {
+                    renderAdminUsers();
+                    updateSidebarBadges();
+                    renderAnalytics();
+                });
+            }
+            if (typeof cloudListenOrders === 'function') {
+                cloudListenOrders(() => {
+                    renderAdminOrders();
+                    updateSidebarBadges();
+                    renderAnalytics();
+                });
+            }
         }
 
         function refreshAllAdminData() {
