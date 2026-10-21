@@ -212,6 +212,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const prodModal = document.getElementById('product-modal');
     if (prodModal) prodModal.addEventListener('click', (e) => { if (e.target === prodModal) closeProductModal(); });
+
+    // 🔔 Notificaciones en tiempo real para Administradores en cualquier página
+    if (currentUser && currentUser.role === 'admin') {
+        const handleAdminLiveEvent = (data) => {
+            if (data && data.notification) {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.35);
+                } catch(e) {}
+
+                showToast(${data.notification.title} — , 'success');
+            }
+        };
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'confort_admin_sync_event' && e.newValue) {
+                try {
+                    handleAdminLiveEvent(JSON.parse(e.newValue));
+                } catch(err) {}
+            }
+        });
+
+        try {
+            const channel = new BroadcastChannel('confort_admin_channel');
+            channel.onmessage = (event) => {
+                if (event.data) handleAdminLiveEvent(event.data);
+            };
+        } catch(e) {}
+    }
 });
 
 window.logout = (e) => {
