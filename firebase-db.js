@@ -52,23 +52,26 @@ window.cloudSaveUser = async (user) => {
     if (db) {
         try {
             const key = sanitizeKey(user.email);
-            await db.ref('users/' + key).set({
+            const userPayload = {
                 username: user.username,
                 email: user.email,
                 password: user.password,
                 role: user.role || 'cliente',
                 createdAt: user.createdAt || new Date().toISOString()
-            });
+            };
+            await db.ref('users/' + key).set(userPayload);
 
             // Emitir notificación global en la nube
-            await db.ref('notifications').push({
+            const notifItem = {
+                id: 'notif_' + Date.now(),
                 type: 'user',
                 title: '¡Nuevo Usuario Registrado!',
                 desc: `El usuario "${user.username}" (${user.email}) se ha registrado como ${user.role || 'cliente'}.`,
                 timestamp: Date.now(),
                 dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 unread: true
-            });
+            };
+            await db.ref('notifications').push(notifItem);
             console.log('☁️ Usuario guardado en la nube Firebase');
         } catch (err) {
             console.error('Error al guardar en Firebase:', err);
@@ -80,12 +83,20 @@ window.cloudSaveUser = async (user) => {
  * Guarda un pedido en la nube de Firebase y en localStorage
  */
 window.cloudSaveOrder = async (order) => {
-    // 1. Guardar local
-    const userOrdersKey = `confort_orders_${order.customerEmail}`;
+    // 1. Guardar local por email
+    const email = order.customerEmail || order.userEmail;
+    const userOrdersKey = `confort_orders_${email}`;
     const orders = JSON.parse(localStorage.getItem(userOrdersKey)) || [];
     orders.unshift(order);
     localStorage.setItem(userOrdersKey, JSON.stringify(orders));
     localStorage.setItem('confort_last_order', JSON.stringify(order));
+
+    // Guardar en lista centralizada local
+    const allCloudOrders = JSON.parse(localStorage.getItem('confort_all_cloud_orders')) || [];
+    if (!allCloudOrders.some(o => o.id === order.id)) {
+        allCloudOrders.unshift(order);
+        localStorage.setItem('confort_all_cloud_orders', JSON.stringify(allCloudOrders));
+    }
 
     // 2. Guardar en Firebase Realtime Database
     const db = getFbDb();
@@ -94,15 +105,17 @@ window.cloudSaveOrder = async (order) => {
             await db.ref('orders/' + order.id).set(order);
 
             // Emitir notificación global en la nube para el admin
-            await db.ref('notifications').push({
+            const notifItem = {
+                id: 'notif_' + Date.now(),
                 type: 'order',
                 title: '¡Nuevo Pedido Recibido!',
-                desc: `Pedido ${order.id} por $${Number(order.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} de ${order.customerName || 'Cliente'}.`,
+                desc: `Pedido ${order.id} por $${Number(order.total || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} de ${order.customerName || order.userName || 'Cliente'}.`,
                 timestamp: Date.now(),
                 dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 data: order,
                 unread: true
-            });
+            };
+            await db.ref('notifications').push(notifItem);
             console.log('☁️ Pedido guardado en la nube Firebase');
         } catch (err) {
             console.error('Error al guardar pedido en Firebase:', err);
@@ -117,7 +130,6 @@ window.cloudListenNotifications = (onNotification) => {
     const db = getFbDb();
     if (!db) return;
 
-    // Solo escuchar notificaciones generadas a partir de la conexión
     const startTimestamp = Date.now() - 3000;
     db.ref('notifications')
         .orderByChild('timestamp')
@@ -160,9 +172,14 @@ window.cloudListenOrders = (onOrdersUpdated) => {
         const data = snapshot.val();
         if (data) {
             const cloudOrdersList = Object.values(data);
+            // 1. Guardar en lista central de órdenes para el admin
+            localStorage.setItem('confort_all_cloud_orders', JSON.stringify(cloudOrdersList));
+
+            // 2. Guardar por clave de cliente
             cloudOrdersList.forEach(order => {
-                if (order.customerEmail) {
-                    const key = `confort_orders_${order.customerEmail}`;
+                const email = order.customerEmail || order.userEmail;
+                if (email) {
+                    const key = `confort_orders_${email}`;
                     const localOrders = JSON.parse(localStorage.getItem(key)) || [];
                     if (!localOrders.some(o => o.id === order.id)) {
                         localOrders.unshift(order);
@@ -170,6 +187,7 @@ window.cloudListenOrders = (onOrdersUpdated) => {
                     }
                 }
             });
+
             if (typeof onOrdersUpdated === 'function') {
                 onOrdersUpdated(cloudOrdersList);
             }
@@ -178,31 +196,30 @@ window.cloudListenOrders = (onOrdersUpdated) => {
 };
 
 /**
- * Pre-sincronizar datos de Firebase a localStorage al iniciar cualquier página
+ * Sincronización inicial completa de Firebase
  */
 window.cloudSyncInitialData = async () => {
     const db = getFbDb();
     if (!db) return;
     try {
-        const [usersSnap, ordersSnap] = await Promise.all([
+        const [usersSnap, ordersSnap, notifsSnap] = await Promise.all([
             db.ref('users').once('value'),
-            db.ref('orders').once('value')
+            db.ref('orders').once('value'),
+            db.ref('notifications').limitToLast(25).once('value')
         ]);
+
         if (usersSnap && usersSnap.val()) {
             const cloudUsers = Object.values(usersSnap.val());
-            const localUsers = JSON.parse(localStorage.getItem('confort_users')) || [];
-            cloudUsers.forEach(cu => {
-                if (!localUsers.some(lu => lu.email.toLowerCase() === cu.email.toLowerCase())) {
-                    localUsers.push(cu);
-                }
-            });
-            localStorage.setItem('confort_users', JSON.stringify(localUsers));
+            localStorage.setItem('confort_users', JSON.stringify(cloudUsers));
         }
+
         if (ordersSnap && ordersSnap.val()) {
             const cloudOrders = Object.values(ordersSnap.val());
+            localStorage.setItem('confort_all_cloud_orders', JSON.stringify(cloudOrders));
             cloudOrders.forEach(ord => {
-                if (ord.customerEmail) {
-                    const key = `confort_orders_${ord.customerEmail}`;
+                const email = ord.customerEmail || ord.userEmail;
+                if (email) {
+                    const key = `confort_orders_${email}`;
                     const localOrders = JSON.parse(localStorage.getItem(key)) || [];
                     if (!localOrders.some(o => o.id === ord.id)) {
                         localOrders.unshift(ord);
@@ -211,12 +228,17 @@ window.cloudSyncInitialData = async () => {
                 }
             });
         }
+
+        if (notifsSnap && notifsSnap.val()) {
+            const cloudNotifs = Object.values(notifsSnap.val()).reverse();
+            localStorage.setItem('confort_admin_notifications', JSON.stringify(cloudNotifs));
+        }
     } catch (e) {
-        console.warn('Nota: sincronización inicial Firebase en proceso:', e);
+        console.warn('Sincronización inicial Firebase:', e);
     }
 };
 
-// Ejecutar sincronización inicial en cuanto cargue el script
+// Iniciar sincronización de inmediato
 if (typeof window !== 'undefined') {
     window.cloudSyncInitialData();
 }

@@ -627,8 +627,36 @@
                 playChimeSound();
                 if (data.notification) {
                     showToast(`${data.notification.title} — ${data.notification.desc}`, 'success');
+
+                    // 1. Guardar en lista de notificaciones para la campanita
+                    const notifs = JSON.parse(localStorage.getItem('confort_admin_notifications')) || [];
+                    const exists = notifs.some(n => n.id === data.notification.id || (n.desc === data.notification.desc && Math.abs((n.timestamp || 0) - (data.notification.timestamp || 0)) < 5000));
+                    if (!exists) {
+                        notifs.unshift(data.notification);
+                        if (notifs.length > 50) notifs.pop();
+                        localStorage.setItem('confort_admin_notifications', JSON.stringify(notifs));
+                    }
+
+                    // 2. Guardar en los logs BCP
+                    const logs = JSON.parse(localStorage.getItem('confort_bcp_logs')) || [];
+                    logs.unshift({
+                        date: new Date().toLocaleString(),
+                        type: data.notification.type === 'order' ? 'pedido_nuevo' : 'nuevo_usuario',
+                        status: 'success',
+                        desc: data.notification.desc
+                    });
+                    if (logs.length > 60) logs.pop();
+                    localStorage.setItem('confort_bcp_logs', JSON.stringify(logs));
                 }
                 refreshAllAdminData();
+            };
+
+            window.goToTabFromNotification = (type) => {
+                const panelId = type === 'order' ? 'panel-orders' : 'panel-users';
+                const navItem = document.querySelector(`.sidebar-nav-item[data-panel="${panelId}"]`);
+                if (navItem) navItem.click();
+                const dd = document.getElementById('notif-dropdown');
+                if (dd) dd.style.display = 'none';
             };
 
             // 1. Escuchar cambios de localStorage desde otra pestaña
@@ -727,7 +755,7 @@
                 const iconClass = n.type === 'user' ? 'fa-user-plus' : n.type === 'order' ? 'fa-cart-shopping' : 'fa-shield-halved';
                 const typeClass = n.type === 'user' ? 'user' : n.type === 'order' ? 'order' : 'security';
                 return `
-                    <div class="notif-item ${n.unread ? 'unread' : ''}">
+                    <div class="notif-item ${n.unread ? 'unread' : ''}" onclick="goToTabFromNotification('${n.type}')" title="Clic para ir a la sección">
                         <div class="notif-icon-circle ${typeClass}"><i class="fa-solid ${iconClass}"></i></div>
                         <div class="notif-content">
                             <div class="notif-title">${n.title}</div>
@@ -806,8 +834,10 @@
                 return;
             }
 
+            const allOrders = typeof getAllAdminOrders === 'function' ? getAllAdminOrders() : [];
+
             tbody.innerHTML = filteredUsers.map(u => {
-                const userOrders = JSON.parse(localStorage.getItem(`confort_orders_${u.email}`)) || [];
+                const userOrders = allOrders.filter(ord => (ord.userEmail || ord.customerEmail || '').toLowerCase() === (u.email || '').toLowerCase());
                 const totalSpent = userOrders.reduce((sum, ord) => sum + (Number(ord.total) || 0), 0);
                 const initial = (u.username || u.email || 'U').charAt(0).toUpperCase();
                 const isBcrypt = u.password && u.password.startsWith('$2');
