@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
     /* Colors */
@@ -682,17 +682,7 @@ a {
 }
 
 /* Loading Screen */
-.loading-screen {
-    position: fixed;
-    inset: 0;
-    background: var(--bg-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    transition: opacity 0.5s ease;
-}
+.loading-screen { display: none !important; visibility: hidden !important; pointer-events: none !important; opacity: 0 !important; }
 
 .loader-logo {
     font-size: 2.5rem;
