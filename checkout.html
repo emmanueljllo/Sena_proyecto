@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -15,6 +15,15 @@
     <div class="loading-screen" id="loading-screen">
         <div class="loader-logo gold-gradient-text">Confort Market</div>
         <div class="loader-bar"><div class="loader-progress"></div></div>
+    <script>
+        setTimeout(function() {
+            var loader = document.getElementById('loading-screen');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(function() { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 400);
+            }
+        }, 800);
+    </script>
     </div>
     
     <!-- Toast Container -->

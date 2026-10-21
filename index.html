@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -23,6 +23,16 @@
             <div class="loader-progress"></div>
         </div>
     </div>
+    <script>
+        // Cierre garantizado de pantalla de carga
+        setTimeout(function() {
+            var loader = document.getElementById('loading-screen');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(function() { if (loader.parentNode) loader.parentNode.removeChild(loader); }, 400);
+            }
+        }, 800);
+    </script>
 
     <!-- Toast Notifications Container -->
     <div class="toast-container" id="toast-container"></div>

@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     osc.stop(ctx.currentTime + 0.35);
                 } catch(e) {}
 
-                showToast(${data.notification.title} — , 'success');
+                showToast(data.notification.title + ' — ' + (data.notification.desc || ''), 'success');
             }
         };
 
