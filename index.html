@@ -10,31 +10,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- BCP Failover Active Banner -->
-    <div class="bcp-banner" id="bcp-failover-banner">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span><strong>PROTOCOLO BCP ACTIVO:</strong> El sistema está operando en el Servidor Réplica de Contingencia (Failover Seguro). Servicio 100% disponible.</span>
+    <div class="store-announcement" id="bcp-failover-banner" role="status" aria-live="polite">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        <span class="announcement-message"><strong>Compra segura, siempre.</strong> Envío prioritario y garantía oficial de 2 años.</span>
     </div>
 
     <!-- Toast Notifications Container -->
-    <div class="toast-container" id="toast-container"></div>
-
-    <!-- Luxury Ticker / VIP Announcement Bar -->
-    <div class="vip-top-bar">
-        <div class="vip-marquee">
-            <span>✨ EDICIÓN GOLD 2026: DISPONIBILIDAD LIMITADA</span>
-            <span class="marquee-dot">◆</span>
-            <span>🚀 ENVÍO PRIORITARIO ASEGURADO SIN COSTO ADICIONAL</span>
-            <span class="marquee-dot">◆</span>
-            <span>🛡️ CONTINUIDAD TECNOLÓGICA BCP CON 99.99% UPTIME</span>
-            <span class="marquee-dot">◆</span>
-            <span>💳 FINANCIACIÓN EXCLUSIVA HASTA 12 CUOTAS SIN INTERÉS</span>
-            <span class="marquee-dot">◆</span>
-            <span>🔒 GARANTÍA OFICIAL CONFORT CARE DE 2 AÑOS</span>
-            <span class="marquee-dot">◆</span>
-            <span>✨ EDICIÓN GOLD 2026: DISPONIBILIDAD LIMITADA</span>
-        </div>
-    </div>
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
@@ -60,11 +42,11 @@
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span class="badge-count" id="cart-count">0</span>
             </a>
-            <div class="hamburger" id="hamburger">
+            <button class="hamburger" id="hamburger" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-menu">
                 <span></span>
                 <span></span>
                 <span></span>
-            </div>
+            </button>
         </div>
     </nav>
 
@@ -84,21 +66,10 @@
                     Explorar Catálogo <i class="fa-solid fa-arrow-right"></i>
                 </button>
                 <a href="#catalogo" class="btn btn-outline" onclick="document.getElementById('search-input').value='pro'; document.getElementById('search-input').dispatchEvent(new Event('input'))">
-                    Ver Exclusivos 🔥
+                    Ver Exclusivos
                 </a>
             </div>
 
-            <!-- VIP Countdown Box -->
-            <div class="vip-countdown-box animate-fade-up stagger-3">
-                <span class="countdown-label"><i class="fa-solid fa-clock-rotate-left"></i> Venta Privada VIP termina en:</span>
-                <div class="countdown-digits">
-                    <span class="time-block"><strong id="cd-hours">08</strong><small>Horas</small></span>
-                    <span class="time-colon">:</span>
-                    <span class="time-block"><strong id="cd-mins">42</strong><small>Min</small></span>
-                    <span class="time-colon">:</span>
-                    <span class="time-block"><strong id="cd-secs">19</strong><small>Seg</small></span>
-                </div>
-            </div>
         </div>
     </header>
 
@@ -114,8 +85,8 @@
         <div class="feature-card glass-card">
             <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
             <div class="feature-text">
-                <h4>Seguridad BCP Activa</h4>
-                <p>Infraestructura redundante con tolerancia a fallos y cifrado militar.</p>
+                <h4>Compra protegida</h4>
+                <p>Tus datos y compras están protegidos en cada paso.</p>
             </div>
         </div>
         <div class="feature-card glass-card">
@@ -174,8 +145,11 @@
     </section>
 
     <!-- Products Grid -->
-    <section class="products-container" id="products-grid">
-        <!-- Products will be injected via JS -->
+    <section class="products-container" id="products-grid" aria-label="Catálogo de productos" aria-busy="true">
+        <div class="product-skeleton" aria-hidden="true"><span class="skeleton-image"></span><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line price"></span></div>
+        <div class="product-skeleton" aria-hidden="true"><span class="skeleton-image"></span><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line price"></span></div>
+        <div class="product-skeleton" aria-hidden="true"><span class="skeleton-image"></span><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line price"></span></div>
+        <div class="product-skeleton" aria-hidden="true"><span class="skeleton-image"></span><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line price"></span></div>
     </section>
 
     <!-- Testimonios VIP -->
@@ -201,7 +175,7 @@
             </div>
             <div class="testimonial-card glass-card">
                 <div class="stars-gold"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
-                <p class="testimonial-comment">"Compré el micrófono y el teclado Titan RGB. La calidad de construcción y la acústica son de estudio profesional. La factura con sello BCP me dio total tranquilidad."</p>
+                <p class="testimonial-comment">"Compré el micrófono y el teclado Titan RGB. La calidad de construcción y la acústica son de estudio profesional. El respaldo de seguridad me dio total tranquilidad."</p>
                 <div class="testimonial-user">
                     <div class="user-avatar" style="background:#e67e22; color:#fff;">VM</div>
                     <div>
@@ -229,8 +203,14 @@
         <i class="fa-solid fa-chevron-up"></i>
     </div>
 
+    <a class="whatsapp-float" href="https://wa.me/573170924695?text=Hola%2C%20me%20interesa%20un%20producto%20de%20Confort%20Market.%20Quisiera%20m%C3%A1s%20informaci%C3%B3n."
+       target="_blank" rel="noopener noreferrer" aria-label="Contactar a Confort Market por WhatsApp">
+        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+        <span>¿Necesitas ayuda? <strong>Escríbenos</strong></span>
+    </a>
+
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer" id="store-footer">
         <div class="footer-grid">
             <div class="footer-col">
                 <a href="index.html" class="nav-brand">
@@ -238,9 +218,9 @@
                 </a>
                 <p style="color: var(--text-secondary); margin-top: 1rem;">Tu destino premium para tecnología exclusiva y accesorios de alta gama.</p>
                 <div class="social-links">
-                    <a href="#" class="social-link"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fa-brands fa-twitter"></i></a>
-                    <a href="#" class="social-link"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#store-footer" class="social-link" data-coming-soon aria-label="Instagram, próximamente"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#store-footer" class="social-link" data-coming-soon aria-label="Twitter, próximamente"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#store-footer" class="social-link" data-coming-soon aria-label="Facebook, próximamente"><i class="fa-brands fa-facebook-f"></i></a>
                 </div>
             </div>
             <div class="footer-col">
@@ -255,10 +235,10 @@
             <div class="footer-col">
                 <h4>Atención al Cliente</h4>
                 <ul class="footer-links">
-                    <li><a href="#">Contacto</a></li>
-                    <li><a href="#">Envíos y Devoluciones</a></li>
-                    <li><a href="#">Términos y Condiciones</a></li>
-                    <li><a href="#">Política de Privacidad</a></li>
+                    <li><a href="#store-footer" data-coming-soon>Contacto</a></li>
+                    <li><a href="#store-footer" data-coming-soon>Envíos y Devoluciones</a></li>
+                    <li><a href="#store-footer" data-coming-soon>Términos y Condiciones</a></li>
+                    <li><a href="#store-footer" data-coming-soon>Política de Privacidad</a></li>
                 </ul>
             </div>
         </div>
@@ -272,7 +252,7 @@
         <div class="glass-card quick-view-box">
             <button class="modal-close" onclick="closeQuickView()"><i class="fa-solid fa-xmark"></i></button>
             <div class="quick-view-img-container">
-                <img src="" alt="" id="qv-image" class="quick-view-img">
+                <img src="assets/logo.png" alt="Imagen del producto seleccionado" id="qv-image" class="quick-view-img">
             </div>
             <div class="quick-view-details">
                 <span class="product-category" id="qv-category">Categoría</span>
@@ -310,7 +290,7 @@
                 <ul class="quick-view-specs">
                     <li><i class="fa-solid fa-shield-check"></i> Garantía oficial de 2 años Confort Care</li>
                     <li><i class="fa-solid fa-truck-fast"></i> Envío express nacional garantizado</li>
-                    <li><i class="fa-solid fa-lock"></i> Compra respaldada por protocolo de seguridad BCP</li>
+                    <li><i class="fa-solid fa-lock"></i> Compra protegida con tecnología de seguridad avanzada</li>
                 </ul>
                 <div style="display:flex; align-items:center; gap: 0.8rem; margin-top: 1rem; flex-wrap: wrap;">
                     <div class="qty-selector">

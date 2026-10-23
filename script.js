@@ -149,6 +149,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navbar Scroll Effect
     const navbar = document.getElementById('navbar');
     const backToTop = document.getElementById('back-to-top');
+
+    document.querySelectorAll('[data-coming-soon]').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            showToast('Próximamente', 'info');
+        });
+    });
     
     window.addEventListener('scroll', () => {
         if (window.scrollY > 50) {
@@ -164,9 +171,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('nav-menu');
     if (hamburger && navMenu) {
+        const setMenuOpen = (isOpen) => {
+            hamburger.classList.toggle('active', isOpen);
+            navMenu.classList.toggle('active', isOpen);
+            hamburger.setAttribute('aria-expanded', String(isOpen));
+            hamburger.setAttribute('aria-label', isOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación');
+        };
+
         hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
+            setMenuOpen(!navMenu.classList.contains('active'));
+        });
+        navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => setMenuOpen(false));
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && navMenu.classList.contains('active')) {
+                setMenuOpen(false);
+                hamburger.focus();
+            }
+        });
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+                setMenuOpen(false);
+            }
         });
     }
 
@@ -369,8 +396,8 @@ window.openQuickView = (productId) => {
 
     const imgEl = document.getElementById('qv-image');
     if (imgEl) {
-        imgEl.src = product.image;
-        imgEl.alt = product.name;
+        imgEl.src = product.image || 'assets/logo.png';
+        imgEl.alt = product.name ? `Imagen de ${product.name}` : 'Imagen del producto seleccionado';
     }
     const catEl = document.getElementById('qv-category');
     if (catEl) catEl.textContent = product.category;
@@ -404,7 +431,7 @@ window.openQuickView = (productId) => {
 
     const descEl = document.getElementById('qv-description');
     if (descEl) {
-        descEl.textContent = `${product.name} combina ingeniería de precisión con materiales aeroespaciales, chasis en titanio y detalles en oro de 24K. Certificado bajo los más exigentes estándares tecnológicos y respaldado por la garantía institucional Confort Care y protocolo de seguridad BCP.`;
+        descEl.textContent = `${product.name} combina diseño cuidado y tecnología de alto rendimiento, con el respaldo de la garantía oficial Confort Care y una compra protegida de principio a fin.`;
     }
 
     const qtyEl = document.getElementById('qv-qty');
@@ -459,29 +486,6 @@ const initIndexPage = () => {
 
     renderProducts();
 
-    // Contador regresivo VIP
-    const updateCountdown = () => {
-        const hoursEl = document.getElementById('cd-hours');
-        const minsEl = document.getElementById('cd-mins');
-        const secsEl = document.getElementById('cd-secs');
-        if (!hoursEl || !minsEl || !secsEl) return;
-
-        const now = new Date();
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-        const diff = Math.max(0, endOfDay - now);
-
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-        hoursEl.textContent = String(hours).padStart(2, '0');
-        minsEl.textContent = String(mins).padStart(2, '0');
-        secsEl.textContent = String(secs).padStart(2, '0');
-    };
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-
     // Búsqueda
     const searchInput = document.getElementById('search-input');
     const clearSearch = document.getElementById('clear-search');
@@ -520,6 +524,7 @@ const renderProducts = (search = '', category = 'all', sort = 'featured') => {
     if (!productsGrid) return;
 
     productsGrid.innerHTML = '';
+    productsGrid.setAttribute('aria-busy', 'false');
 
     let filtered = products.filter(p => {
         const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -556,6 +561,8 @@ const renderProducts = (search = '', category = 'all', sort = 'featured') => {
         badgesHtml += '</div>';
 
         const oldPriceHtml = p.oldPrice ? `<span class="product-price-old">${formatPrice(p.oldPrice)}</span>` : '';
+        const imageSrc = p.image || 'assets/logo.png';
+        const imageAlt = p.name ? `Imagen de ${p.name}` : 'Imagen del producto';
 
         const card = document.createElement('div');
         card.className = 'glass-card product-card animate-fade-up';
@@ -566,7 +573,7 @@ const renderProducts = (search = '', category = 'all', sort = 'featured') => {
             <button class="wishlist-btn ${isWished ? 'active' : ''}" onclick="toggleWishlist(${p.id})" title="Favorito">
                 <i class="${isWished ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>
-            <img src="${p.image}" alt="${p.name}" class="product-image" onclick="openQuickView(${p.id})" style="cursor: pointer;" title="Ver detalle del producto">
+            <img src="${imageSrc}" alt="${imageAlt}" class="product-image" onclick="openQuickView(${p.id})" style="cursor: pointer;" title="Ver detalle del producto">
             <div class="product-info">
                 <span class="product-category">${p.category}</span>
                 <h3 class="product-title" onclick="openQuickView(${p.id})" style="cursor: pointer;">${p.name}</h3>
@@ -765,7 +772,7 @@ const renderCart = () => {
             el.className = 'summary-item animate-fade-up';
             el.style.animationDelay = `${index * 0.1}s`;
             el.innerHTML = `
-                <img src="${item.image}" alt="${item.name}">
+                <img src="${item.image || 'assets/logo.png'}" alt="${item.name ? `Imagen de ${item.name}` : 'Imagen del producto'}">
                 <div class="summary-details" style="flex:1;">
                     <h4>${item.name}</h4>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.5rem;">
@@ -1076,10 +1083,16 @@ window.toggleBcpFailover = () => {
 const updateBcpUI = () => {
     const isFailover = localStorage.getItem('confort_bcp_failover') === 'true';
     
-    // Banner superior en la tienda
+    // Aviso superior de la tienda
     const banner = document.getElementById('bcp-failover-banner');
     if (banner) {
-        banner.style.display = isFailover ? 'flex' : 'none';
+        banner.style.display = 'flex';
+        const message = banner.querySelector('.announcement-message');
+        if (message) {
+            message.innerHTML = isFailover
+                ? '<strong>Servicio protegido y disponible.</strong> Seguimos cuidando cada detalle de tu compra.'
+                : '<strong>Compra segura, siempre.</strong> Envío prioritario y garantía oficial de 2 años.';
+        }
     }
 
     // Tarjeta y botón en admin.html
@@ -1144,7 +1157,7 @@ window.renderAdminProducts = () => {
 
         tr.innerHTML = `
             <td>
-                <img src="${p.image}" alt="${p.name}" style="width:45px; height:45px; object-fit:contain; border-radius:6px; background:rgba(255,255,255,0.05); padding:2px;">
+                <img src="${p.image || 'assets/logo.png'}" alt="${p.name ? `Imagen de ${p.name}` : 'Imagen del producto'}" style="width:45px; height:45px; object-fit:contain; border-radius:6px; background:rgba(255,255,255,0.05); padding:2px;">
             </td>
             <td><strong>${p.name}</strong></td>
             <td><span class="product-category">${p.category}</span></td>
@@ -1586,7 +1599,7 @@ const renderDashboardWishlist = () => {
             <button class="wishlist-btn active" onclick="removeFromWishlistDashboard(${p.id})">
                 <i class="fa-solid fa-heart"></i>
             </button>
-            <img src="${p.image}" alt="${p.name}" class="product-image" onclick="openQuickView(${p.id})" style="cursor:pointer;">
+            <img src="${p.image || 'assets/logo.png'}" alt="${p.name ? `Imagen de ${p.name}` : 'Imagen del producto'}" class="product-image" onclick="openQuickView(${p.id})" style="cursor:pointer;">
             <div class="product-info">
                 <span class="product-category">${p.category}</span>
                 <h3 class="product-title" onclick="openQuickView(${p.id})" style="cursor:pointer;">${p.name}</h3>
