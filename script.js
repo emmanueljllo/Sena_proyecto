@@ -1,4 +1,4 @@
-﻿// --- Datos Iniciales de Productos ---
+// --- Datos Iniciales de Productos ---
 const defaultProducts = [
     { id: 1, name: "ConfortBook Pro X", price: 1499.00, oldPrice: 1699.00, category: "Computadores", rating: 4.9, reviews: 128, image: "assets/premium_laptop_1778531221300.png", badge: "new" },
     { id: 2, name: "Chrono Elite Gold", price: 399.00, oldPrice: null, category: "Accesorios", rating: 4.8, reviews: 85, image: "assets/premium_smartwatch_1778531397408.png", badge: null },
@@ -45,7 +45,6 @@ if (micProduct && (micProduct.image.includes('picsum') || micProduct.image !== '
 }
 
 // --- Estado Global ---
-const ADMIN_SECRET_CODE = 'CONFORTADMIN2026';
 let currentUser = JSON.parse(localStorage.getItem('confort_current_user')) || null;
 let userCartKey = currentUser ? `confort_cart_${currentUser.email}` : 'confort_cart_guest';
 let userWishlistKey = currentUser ? `confort_wishlist_${currentUser.email}` : 'confort_wishlist_guest';
@@ -68,16 +67,20 @@ const showToast = (message, type = 'success') => {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
-    const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:#2ed573; font-size:1.2rem;"></i>' : 
-                 type === 'error' ? '<i class="fa-solid fa-circle-exclamation" style="color:#ff4757; font-size:1.2rem;"></i>' : 
-                 '<i class="fa-solid fa-circle-info" style="color:#3498db; font-size:1.2rem;"></i>';
-
-    toast.innerHTML = `
-        ${icon}
-        <div style="font-weight:500;">${message}</div>
-        <div class="toast-progress"></div>
-    `;
+    const icon = document.createElement('i');
+    icon.className = type === 'success'
+        ? 'fa-solid fa-circle-check'
+        : type === 'error'
+            ? 'fa-solid fa-circle-exclamation'
+            : 'fa-solid fa-circle-info';
+    icon.style.color = type === 'success' ? '#2ed573' : type === 'error' ? '#ff4757' : '#3498db';
+    icon.style.fontSize = '1.2rem';
+    const text = document.createElement('div');
+    text.style.fontWeight = '500';
+    text.textContent = message;
+    const progress = document.createElement('div');
+    progress.className = 'toast-progress';
+    toast.append(icon, text, progress);
 
     container.appendChild(toast);
 
@@ -86,6 +89,7 @@ const showToast = (message, type = 'success') => {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 };
+window.showToast = showToast;
 
 // --- Notificaciones en Tiempo Real y Logs BCP para el Admin ---
 window.notifyAdminEvent = (event) => {
@@ -156,6 +160,20 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Próximamente', 'info');
         });
     });
+
+    const storageConsent = document.getElementById('storage-consent');
+    const acceptStorageButton = document.getElementById('accept-essential-storage');
+    if (storageConsent && acceptStorageButton) {
+        if (localStorage.getItem('confort_storage_consent') === 'essential-v1') {
+            storageConsent.hidden = true;
+        } else {
+            storageConsent.hidden = false;
+        }
+        acceptStorageButton.addEventListener('click', () => {
+            localStorage.setItem('confort_storage_consent', 'essential-v1');
+            storageConsent.hidden = true;
+        });
+    }
     
     window.addEventListener('scroll', () => {
         if (window.scrollY > 50) {
@@ -280,44 +298,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-window.logout = (e) => {
+window.logout = async (e) => {
     if(e) e.preventDefault();
-    localStorage.removeItem('confort_current_user');
-    localStorage.removeItem('confort_user_logged_in');
-    window.location.href = 'index.html';
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        showToast('No se pudo cerrar la sesión segura. Inténtalo de nuevo.', 'error');
+        return;
+    }
+    try {
+        await firebase.auth().signOut();
+        localStorage.removeItem('confort_current_user');
+        localStorage.removeItem('confort_user_logged_in');
+        window.location.href = 'index.html';
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        showToast('No se pudo cerrar la sesión. Inténtalo de nuevo.', 'error');
+    }
 };
 
 // --- Forgot Password (Modal) ---
 window.verifyForgotEmail = () => {
-    const email = document.getElementById('forgot-email').value.trim();
-    if (!email) { showToast('Ingresa un correo válido', 'error'); return; }
-    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-    const user = users.find(u => u.email === email);
-    if (!user) { showToast('No existe una cuenta con ese correo', 'error'); return; }
-    document.getElementById('forgot-step-1').style.display = 'none';
-    document.getElementById('forgot-step-2').style.display = 'block';
-};
-
-window.resetPassword = () => {
-    const email = document.getElementById('forgot-email').value.trim();
-    const newPass = document.getElementById('forgot-new-password').value;
-    const confirm = document.getElementById('forgot-confirm-password').value;
-    if (newPass.length < 8) { showToast('La contraseña debe tener al menos 8 caracteres', 'error'); return; }
-    if (newPass !== confirm) { showToast('Las contraseñas no coinciden', 'error'); return; }
-    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-    const idx = users.findIndex(u => u.email === email);
-    if (idx === -1) { showToast('Error al actualizar', 'error'); return; }
-    users[idx].password = newPass;
-    localStorage.setItem('confort_users', JSON.stringify(users));
-    showToast('¡Contraseña actualizada! Inicia sesión.');
-    closeForgotModal();
+    const emailInput = document.getElementById('forgot-email');
+    if (!emailInput || !emailInput.reportValidity()) return;
+    if (typeof window.sendAuthPasswordReset !== 'function') {
+        showToast('El servicio de recuperación no está disponible.', 'error');
+        return;
+    }
+    window.sendAuthPasswordReset(emailInput.value.trim().toLowerCase());
 };
 
 window.closeForgotModal = () => {
-    document.getElementById('forgot-modal').style.display = 'none';
-    document.getElementById('forgot-step-1').style.display = 'block';
-    document.getElementById('forgot-step-2').style.display = 'none';
-    document.getElementById('forgot-email').value = '';
+    const modal = document.getElementById('forgot-modal');
+    if (modal) modal.style.display = 'none';
+    const email = document.getElementById('forgot-email');
+    const message = document.getElementById('forgot-reset-message');
+    if (email) email.value = '';
+    if (message) message.textContent = '';
 };
 
 const openForgotModal = () => {
@@ -1647,247 +1662,71 @@ const renderAdminPanel = () => {
         const roleHtml = u.role === 'admin'
             ? '<span class="status-badge" style="background:rgba(212,175,55,0.15); color:var(--gold-primary);"><i class="fa-solid fa-shield-halved"></i> Admin</span>'
             : '<span class="status-badge status-processing"><i class="fa-regular fa-user"></i> Cliente</span>';
-        tr.innerHTML = `
-            <td><strong>${u.username || 'N/A'}</strong></td>
-            <td>${u.email}</td>
-            <td>${roleHtml}</td>
-            <td>${userOrders.length} pedido(s)</td>
-        `;
+        const nameCell = document.createElement('td');
+        const name = document.createElement('strong');
+        name.textContent = u.username || 'N/A';
+        nameCell.appendChild(name);
+        const emailCell = document.createElement('td');
+        emailCell.textContent = u.email || '';
+        const roleCell = document.createElement('td');
+        roleCell.innerHTML = roleHtml;
+        const ordersCell = document.createElement('td');
+        ordersCell.textContent = `${userOrders.length} pedido(s)`;
+        tr.append(nameCell, emailCell, roleCell, ordersCell);
         tbody.appendChild(tr);
     });
 };
 
 // --- Auth Forms Validation ---
-const setFieldError = (field, message) => {
-    const input = document.getElementById(field);
-    const error = document.getElementById(`${field}-error`);
-    if (!input || !error) return;
-    input.classList.toggle('invalid', Boolean(message));
-    input.setAttribute('aria-invalid', String(Boolean(message)));
-    error.textContent = message;
-};
-
-const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-// 🔐 Helpers bcrypt (soporta dcodeIO.bcrypt CDN y bcryptjs CDN)
-const _bcrypt = () => {
-    if (typeof dcodeIO !== 'undefined' && dcodeIO.bcrypt) return dcodeIO.bcrypt;
-    if (typeof bcrypt !== 'undefined') return bcrypt;
-    return null;
-};
-
-const bcryptHash = async (password) => {
-    const b = _bcrypt();
-    if (!b) return password; // fallback sin hash si la lib no cargó
-    const salt = await b.genSalt(10);
-    return await b.hash(password, salt);
-};
-
-const bcryptCompare = async (password, hash) => {
-    const b = _bcrypt();
-    if (!b) return password === hash;
-    return await b.compare(password, hash);
-};
-
 const initAuthPages = () => {
     const passInput = document.getElementById('password');
     const strengthBar = document.getElementById('strength-bar');
     const strengthLabel = document.getElementById('strength-label');
 
     if (passInput && strengthBar) {
-        passInput.addEventListener('input', (e) => {
-            const val = e.target.value;
-            let strength = 0;
-            if (val.length >= 8) strength += 25;
-            if (/[A-Z]/.test(val)) strength += 25;
-            if (/[0-9]/.test(val)) strength += 25;
-            if (/[^A-Za-z0-9]/.test(val)) strength += 25;
+        passInput.addEventListener('input', event => {
+            const value = event.target.value;
+            let score = 0;
+            if (value.length >= 12) score++;
+            if (value.length >= 16) score++;
+            if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
+            if (/\d/.test(value) || /[^A-Za-z0-9]/.test(value)) score++;
 
-            strengthBar.style.width = strength + '%';
-            if (strength <= 25) {
-                strengthBar.style.background = '#ff4757';
-                if (strengthLabel) { strengthLabel.textContent = 'Debil'; strengthLabel.style.color = '#ff4757'; }
-            } else if (strength <= 50) {
-                strengthBar.style.background = '#ffa502';
-                if (strengthLabel) { strengthLabel.textContent = 'Regular'; strengthLabel.style.color = '#ffa502'; }
-            } else if (strength <= 75) {
-                strengthBar.style.background = '#2ed573';
-                if (strengthLabel) { strengthLabel.textContent = 'Fuerte'; strengthLabel.style.color = '#2ed573'; }
-            } else {
-                strengthBar.style.background = 'var(--gold-primary)';
-                if (strengthLabel) { strengthLabel.textContent = 'Muy Segura'; strengthLabel.style.color = 'var(--gold-primary)'; }
+            const levels = [
+                { label: 'Muy débil', color: '#ff4757' },
+                { label: 'Débil', color: '#ff6b4a' },
+                { label: 'Aceptable', color: '#ffa502' },
+                { label: 'Fuerte', color: '#2ed573' },
+                { label: 'Muy fuerte', color: 'var(--gold-primary)' }
+            ];
+            const level = value ? levels[score] : null;
+            strengthBar.style.width = `${score * 25}%`;
+            strengthBar.style.background = level ? level.color : 'transparent';
+            const progress = strengthBar.closest('[role="progressbar"]');
+            if (progress) progress.setAttribute('aria-valuenow', String(score));
+            if (strengthLabel) {
+                strengthLabel.textContent = level ? level.label : 'Usa al menos 12 caracteres.';
+                strengthLabel.style.color = level ? level.color : '';
             }
         });
     }
 
-    const registerForm = document.getElementById('register-form');
-    const roleSelect = document.getElementById('role');
-    const adminCodeGroup = document.getElementById('admin-code-group');
-
-    if (roleSelect && adminCodeGroup) {
-        roleSelect.addEventListener('change', (e) => {
-            adminCodeGroup.style.display = e.target.value === 'admin' ? 'block' : 'none';
-        });
-    }
-
-    if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-            const confirm = document.getElementById('confirm-password').value;
-            const roleEl = document.getElementById('role');
-            const adminCode = document.getElementById('admin-code') ? document.getElementById('admin-code').value.trim() : '';
-            const terms = document.getElementById('terms');
-            let valid = true;
-
-            setFieldError('username', username.length >= 3 ? '' : 'El nombre debe tener al menos 3 caracteres.');
-            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electronico valido.');
-            setFieldError('password', password.length >= 8 ? '' : 'La contrasena debe tener al menos 8 caracteres.');
-            setFieldError('confirm-password', password === confirm ? '' : 'Las contrasenas no coinciden.');
-            setFieldError('admin-code', roleEl.value === 'admin' && adminCode !== ADMIN_SECRET_CODE ? 'Codigo administrador incorrecto.' : '');
-            setFieldError('terms', terms && terms.checked ? '' : 'Debes aceptar los terminos y la politica de privacidad.');
-            valid = username.length >= 3 && validateEmail(email) && password.length >= 8 && password === confirm
-                && (!roleEl || roleEl.value !== 'admin' || adminCode === ADMIN_SECRET_CODE)
-                && (!terms || terms.checked);
-
-            if (!valid) {
-                showToast('Revisa los campos mencionados', 'error');
-                registerForm.querySelector('.invalid')?.focus();
-                return;
-            }
-
-            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            if (users.find(u => u.email.toLowerCase() === email)) {
-                setFieldError('email', 'Este correo electronico ya esta registrado.');
-                showToast('El email ya esta registrado', 'error');
-                return;
-            }
-
-            const submitBtn = registerForm.querySelector('[type="submit"]');
-            const origHTML = submitBtn ? submitBtn.innerHTML : '';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cifrando contrasena...'; }
-
-            bcryptHash(password).then(hashedPassword => {
-                const role = roleEl.value === 'admin' ? 'admin' : 'cliente';
-                const newUser = { username, email, password: hashedPassword, role, createdAt: new Date().toISOString() };
-                
-                // Guardar en la nube Firebase (Google Cloud) + Local
-                if (typeof window.cloudSaveUser === 'function') {
-                    window.cloudSaveUser(newUser);
-                } else {
-                    users.push(newUser);
-                    localStorage.setItem('confort_users', JSON.stringify(users));
-                }
-
-                // 🔔 Notificar al panel de administración en tiempo real
-                if (typeof window.notifyAdminEvent === 'function') {
-                    window.notifyAdminEvent({
-                        type: 'nuevo_usuario',
-                        category: 'user',
-                        title: '¡Nuevo Usuario Registrado!',
-                        desc: 'El usuario \"' + username + '\" (' + email + ') se ha registrado con rol ' + role + '. Cifrado bcrypt activo.',
-                        data: { username: username, email: email, role: role }
-                    });
-                }
-
-                if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Cuenta creada!';
-                showToast('Cuenta creada con contrasena cifrada (bcrypt)');
-                setTimeout(() => window.location.href = 'login.html', 1600);
-            }).catch(() => {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
-                showToast('Error al crear la cuenta', 'error');
-            });
-        });
-    }
-
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim().toLowerCase();
-            const password = document.getElementById('password').value;
-            setFieldError('email', validateEmail(email) ? '' : 'Ingresa un correo electronico valido.');
-            setFieldError('password', password.length >= 1 ? '' : 'Ingresa tu contrasena.');
-            if (!validateEmail(email) || password.length < 1) { showToast('Revisa tus credenciales', 'error'); return; }
-
-            const submitBtn = loginForm.querySelector('[type="submit"]');
-            const origHTML = submitBtn ? submitBtn.innerHTML : '';
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...'; }
-
-            const users = JSON.parse(localStorage.getItem('confort_users')) || [];
-            const user = users.find(u => u.email.toLowerCase() === email);
-
-            if (!user) {
-                showToast('No existe una cuenta con ese correo', 'error');
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
-                loginForm.classList.add('shake');
-                setTimeout(() => loginForm.classList.remove('shake'), 600);
-                return;
-            }
-
-            const doLogin = (match) => {
-                if (match) {
-                    localStorage.setItem('confort_current_user', JSON.stringify({
-                        email: user.email, username: user.username,
-                        role: user.role || 'cliente', loginAt: new Date().toISOString()
-                    }));
-                    localStorage.setItem('confort_user_logged_in', 'true');
-                    const remember = document.getElementById('remember-me');
-                    if (remember && remember.checked) {
-                        localStorage.setItem('confort_remember_email', email);
-                    } else {
-                        localStorage.removeItem('confort_remember_email');
-                    }
-                    if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Bienvenido!';
-                    showToast('Bienvenido de vuelta, ' + user.username + ' !');
-                    setTimeout(() => window.location.replace(user.role === 'admin' ? 'admin.html' : 'dashboard.html'), 1000);
-                } else {
-                    showToast('Contrasena incorrecta', 'error');
-                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origHTML; }
-                    loginForm.classList.add('shake');
-                    setTimeout(() => loginForm.classList.remove('shake'), 600);
-                }
-            };
-
-            const isBcryptHash = user.password && user.password.startsWith('$2');
-            if (isBcryptHash) {
-                bcryptCompare(password, user.password).then(doLogin);
-            } else {
-                const plainMatch = user.password === password;
-                if (plainMatch) {
-                    bcryptHash(password).then(hashed => {
-                        user.password = hashed;
-                        localStorage.setItem('confort_users', JSON.stringify(users));
-                        showToast('Contrasena actualizada a cifrado seguro', 'info');
-                        doLogin(true);
-                    });
-                } else {
-                    doLogin(false);
-                }
-            }
-        });
-
-        const savedEmail = localStorage.getItem('confort_remember_email');
-        if (savedEmail) {
-            const emailInput = document.getElementById('email');
-            if (emailInput) emailInput.value = savedEmail;
-            const rememberCheck = document.getElementById('remember-me');
-            if (rememberCheck) rememberCheck.checked = true;
-        }
-    }
-
-    document.querySelectorAll('.password-toggle').forEach(icon => {
-        icon.addEventListener('click', function() {
+    document.querySelectorAll('.password-toggle').forEach(toggle => {
+        const toggleVisibility = function () {
             const input = this.previousElementSibling;
             if (!input || input.tagName !== 'INPUT') return;
-            if (input.type === 'password') {
-                input.type = 'text';
-                this.classList.replace('fa-eye-slash', 'fa-eye');
-            } else {
-                input.type = 'password';
-                this.classList.replace('fa-eye', 'fa-eye-slash');
+            const reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            this.classList.toggle('fa-eye', reveal);
+            this.classList.toggle('fa-eye-slash', !reveal);
+            this.setAttribute('aria-label', reveal ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            this.setAttribute('aria-pressed', String(reveal));
+        };
+        toggle.addEventListener('click', toggleVisibility);
+        toggle.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggle.click();
             }
         });
     });

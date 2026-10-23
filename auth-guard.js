@@ -1,24 +1,52 @@
-// Lógica de protección de rutas (Auth Guard)
-// Se ejecuta antes de que se renderice la página
-(function() {
+(function () {
     const protectedPages = ['checkout.html', 'dashboard.html', 'admin.html'];
     const currentPage = window.location.pathname.split('/').pop();
     if (!protectedPages.includes(currentPage)) return;
 
-    const isLoggedIn = localStorage.getItem('confort_user_logged_in') === 'true';
-    if (!isLoggedIn) {
-        window.location.href = 'login.html';
+    const redirectToLogin = () => {
+        localStorage.removeItem('confort_current_user');
+        localStorage.removeItem('confort_user_logged_in');
+        window.location.replace('login.html');
+    };
+
+    if (typeof firebase === 'undefined' || !firebase.apps.length || !firebase.auth) {
+        redirectToLogin();
         return;
     }
 
-    const currentUser = JSON.parse(localStorage.getItem('confort_current_user')) || null;
-    if (!currentUser || !currentUser.email) {
-        localStorage.setItem('confort_user_logged_in', 'false');
-        window.location.href = 'login.html';
-        return;
-    }
+    firebase.auth().onAuthStateChanged(async user => {
+        if (!user) {
+            redirectToLogin();
+            return;
+        }
 
-    if (currentPage === 'admin.html' && currentUser.role !== 'admin') {
-        window.location.href = 'dashboard.html';
-    }
+        try {
+            if (!user.multiFactor.enrolledFactors.length) {
+                redirectToLogin();
+                return;
+            }
+            const token = await user.getIdTokenResult();
+            const isAdmin = token.claims.admin === true || token.claims.role === 'admin';
+            if (currentPage === 'admin.html' && !isAdmin) {
+                window.location.replace('dashboard.html');
+                return;
+            }
+
+            localStorage.setItem('confort_current_user', JSON.stringify({
+                uid: user.uid,
+                email: user.email,
+                username: user.displayName || user.email,
+                role: isAdmin ? 'admin' : 'cliente',
+                loginAt: user.metadata.lastSignInTime || new Date().toISOString()
+            }));
+            localStorage.setItem('confort_user_logged_in', 'true');
+            document.documentElement.classList.remove('auth-pending');
+        } catch (error) {
+            console.error('No se pudo validar la sesión autenticada:', error);
+            redirectToLogin();
+        }
+    }, error => {
+        console.error('No se pudo consultar el estado de autenticación:', error);
+        redirectToLogin();
+    });
 })();

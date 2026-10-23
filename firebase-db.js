@@ -12,12 +12,26 @@ const firebaseConfig = {
     messagingSenderId: "139175002385",
     appId: "1:139175002385:web:c9028ec2a3734edf4f8cb0"
 };
+window.confortFirebaseConfig = firebaseConfig;
+
+const publicUserProfile = (user) => ({
+    uid: user.uid || '',
+    username: user.username || '',
+    email: user.email || '',
+    role: user.role === 'admin' ? 'admin' : 'cliente',
+    createdAt: user.createdAt || ''
+});
+
+const cachedUsers = JSON.parse(localStorage.getItem('confort_users') || '[]');
+if (Array.isArray(cachedUsers)) {
+    localStorage.setItem('confort_users', JSON.stringify(cachedUsers.map(publicUserProfile)));
+}
 
 // Inicializar Firebase Compat
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     try {
         firebase.initializeApp(firebaseConfig);
-        console.log('✅ Firebase Realtime Database conectado exitosamente');
+        console.log(' Firebase Realtime Database conectado exitosamente');
     } catch (e) {
         console.warn('Advertencia al inicializar Firebase:', e);
     }
@@ -37,44 +51,32 @@ const sanitizeKey = (key) => (key || '').replace(/[.#$\[\]\/]/g, '_').toLowerCas
  * Guarda un usuario en la nube de Firebase y en localStorage
  */
 window.cloudSaveUser = async (user) => {
-    // 1. Guardar local
-    const users = JSON.parse(localStorage.getItem('confort_users')) || [];
+    const profile = publicUserProfile(user);
+    const users = JSON.parse(localStorage.getItem('confort_users') || '[]');
     const idx = users.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase());
     if (idx !== -1) {
-        users[idx] = { ...users[idx], ...user };
+        users[idx] = { ...users[idx], ...profile };
     } else {
-        users.push(user);
+        users.push(profile);
     }
     localStorage.setItem('confort_users', JSON.stringify(users));
 
-    // 2. Guardar en Firebase Realtime Database
     const db = getFbDb();
     if (db) {
         try {
-            const key = sanitizeKey(user.email);
-            const userPayload = {
-                username: user.username,
-                email: user.email,
-                password: user.password,
-                role: user.role || 'cliente',
-                createdAt: user.createdAt || new Date().toISOString()
-            };
-            await db.ref('users/' + key).set(userPayload);
-
-            // Emitir notificación global en la nube
-            const notifItem = {
-                id: 'notif_' + Date.now(),
-                type: 'user',
-                title: '¡Nuevo Usuario Registrado!',
-                desc: `El usuario "${user.username}" (${user.email}) se ha registrado como ${user.role || 'cliente'}.`,
-                timestamp: Date.now(),
-                dateStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                unread: true
-            };
-            await db.ref('notifications').push(notifItem);
-            console.log('☁️ Usuario guardado en la nube Firebase');
+            const key = sanitizeKey(user.uid || user.email);
+            await db.ref('users/' + key).update(profile);
+            const legacyKey = sanitizeKey(user.email);
+            if (legacyKey !== key) {
+                const legacyEmail = await db.ref(`users/${legacyKey}/email`).once('value');
+                if (String(legacyEmail.val() || '').toLowerCase() === user.email.toLowerCase()) {
+                    await db.ref('users/' + legacyKey).remove();
+                }
+            }
+            console.log(' Usuario guardado en la nube Firebase');
         } catch (err) {
             console.error('Error al guardar en Firebase:', err);
+            throw err;
         }
     }
 };
@@ -116,7 +118,7 @@ window.cloudSaveOrder = async (order) => {
                 unread: true
             };
             await db.ref('notifications').push(notifItem);
-            console.log('☁️ Pedido guardado en la nube Firebase');
+            console.log(' Pedido guardado en la nube Firebase');
         } catch (err) {
             console.error('Error al guardar pedido en Firebase:', err);
         }
@@ -152,7 +154,7 @@ window.cloudListenUsers = (onUsersUpdated) => {
     db.ref('users').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            const cloudUsersList = Object.values(data);
+            const cloudUsersList = Object.values(data).map(publicUserProfile);
             localStorage.setItem('confort_users', JSON.stringify(cloudUsersList));
             if (typeof onUsersUpdated === 'function') {
                 onUsersUpdated(cloudUsersList);
@@ -209,7 +211,7 @@ window.cloudSyncInitialData = async () => {
         ]);
 
         if (usersSnap && usersSnap.val()) {
-            const cloudUsers = Object.values(usersSnap.val());
+            const cloudUsers = Object.values(usersSnap.val()).map(publicUserProfile);
             localStorage.setItem('confort_users', JSON.stringify(cloudUsers));
         }
 

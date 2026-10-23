@@ -7,8 +7,6 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 🔐 bcryptjs para cifrado de contraseñas en el navegador -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
     <style>
         /* ─── Auth Premium ─── */
         .auth-page-wrap {
@@ -88,6 +86,7 @@
         .auth-logo-mini span { font-weight: 700; font-size: 1rem; color: var(--gold-primary, #d4af37); }
         .auth-title { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.35rem; }
         .auth-subtitle-sm { color: rgba(255,255,255,0.5); font-size: 0.875rem; margin-bottom: 2rem; }
+        .auth-migration-note { margin: -1rem 0 1.25rem; color: var(--gold-light); font-size: 0.8rem; line-height: 1.45; }
 
         .form-group-premium { margin-bottom: 1.25rem; position: relative; }
         .form-group-premium label { display: block; font-size: 0.8rem; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -180,7 +179,7 @@
                 <div class="auth-brand-big">Confort Market</div>
                 <div class="auth-brand-sub">Experiencia premium de compras</div>
                 <ul class="auth-features-list">
-                    <li><i class="fa-solid fa-lock"></i> Contraseñas cifradas con bcrypt</li>
+                    <li><i class="fa-solid fa-lock"></i> Acceso protegido por Firebase Authentication</li>
                     <li><i class="fa-solid fa-bolt"></i> Acceso instantáneo a tu cuenta</li>
                     <li><i class="fa-solid fa-star"></i> Catálogo exclusivo VIP</li>
                     <li><i class="fa-solid fa-headset"></i> Concierge 24/7 disponible</li>
@@ -197,23 +196,24 @@
 
                 <h2 class="auth-title">Bienvenido de Nuevo</h2>
                 <p class="auth-subtitle-sm">Inicia sesión en tu cuenta premium</p>
+                <p class="auth-migration-note">Actualizamos la seguridad de la tienda. Las cuentas creadas antes de esta migración deben registrarse nuevamente.</p>
 
-                <form id="login-form">
+                <form id="login-form" data-firebase-auth>
                     <div class="form-group-premium">
-                        <label>Correo Electrónico</label>
+                        <label for="email">Correo Electrónico</label>
                         <div class="input-wrap">
                             <i class="fa-regular fa-envelope input-icon"></i>
-                            <input type="email" id="email" class="input-premium" placeholder="tu@email.com" required autocomplete="email">
+                            <input type="email" id="email" class="input-premium" placeholder="tu@email.com" required maxlength="254" autocomplete="email">
                         </div>
                         <div class="field-error" id="email-error"></div>
                     </div>
 
                     <div class="form-group-premium">
-                        <label>Contraseña</label>
+                        <label for="password">Contraseña</label>
                         <div class="input-wrap">
                             <i class="fa-solid fa-lock input-icon"></i>
-                            <input type="password" id="password" class="input-premium" placeholder="••••••••" required autocomplete="current-password">
-                            <i class="fa-regular fa-eye-slash toggle-pw password-toggle"></i>
+                            <input type="password" id="password" class="input-premium" placeholder="••••••••" required minlength="12" maxlength="128" autocomplete="current-password">
+                            <i class="fa-regular fa-eye-slash toggle-pw password-toggle" role="button" tabindex="0" aria-label="Mostrar contraseña"></i>
                         </div>
                         <div class="field-error" id="password-error"></div>
                     </div>
@@ -222,7 +222,7 @@
                         <label class="remember-label">
                             <input type="checkbox" id="remember-me"> Recordarme
                         </label>
-                        <a href="#" id="forgot-password-link" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                        <a href="#forgot-modal" id="forgot-password-link" class="forgot-link">¿Olvidaste tu contraseña?</a>
                     </div>
 
                     <button type="submit" class="btn-auth">
@@ -230,10 +230,33 @@
                     </button>
                 </form>
 
+                <section class="auth-mfa-panel" id="login-mfa-step" hidden aria-labelledby="login-mfa-title">
+                    <h3 id="login-mfa-title">Verificación en dos pasos</h3>
+                    <p>Abre tu aplicación autenticadora e ingresa el código actual de 6 dígitos.</p>
+                    <form id="login-mfa-form" novalidate>
+                        <label for="login-mfa-code">Código de autenticación</label>
+                        <input id="login-mfa-code" class="input-premium mfa-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="login-mfa-error">
+                        <div class="field-error" id="login-mfa-error" aria-live="polite"></div>
+                        <button type="submit" class="btn-auth">Verificar código</button>
+                    </form>
+                </section>
+
+                <section class="auth-mfa-panel" id="login-mfa-enroll" hidden aria-labelledby="login-mfa-enroll-title">
+                    <h3 id="login-mfa-enroll-title">Protege tu cuenta con una app autenticadora</h3>
+                    <p>Agrega Confort Market en tu aplicación usando esta clave. Secreto de configuración: no la compartas.</p>
+                    <code class="totp-secret" id="login-totp-secret"></code>
+                    <form id="login-totp-enroll-form" novalidate>
+                        <label for="login-totp-code">Código de 6 dígitos de la aplicación</label>
+                        <input id="login-totp-code" class="input-premium mfa-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="login-totp-error">
+                        <div class="field-error" id="login-totp-error" aria-live="polite"></div>
+                        <button type="submit" class="btn-auth">Activar verificación</button>
+                    </form>
+                </section>
+
                 <div class="auth-divider"><span>seguridad</span></div>
                 <div class="security-badge-row">
                     <i class="fa-solid fa-shield-halved"></i>
-                    Contraseñas cifradas con bcrypt · Protocolo BCP activo
+                    Inicio de sesión con verificación TOTP de Firebase
                 </div>
 
                 <div class="auth-footer-link">
@@ -252,41 +275,33 @@
 
             <div id="forgot-step-1">
                 <div class="form-group-premium">
-                    <label>Correo Electrónico</label>
+                    <label for="forgot-email">Correo Electrónico</label>
                     <div class="input-wrap">
                         <i class="fa-regular fa-envelope input-icon"></i>
-                        <input type="email" id="forgot-email" class="input-premium" placeholder="tu@email.com">
+                        <input type="email" id="forgot-email" class="input-premium" placeholder="tu@email.com" maxlength="254" autocomplete="email" required>
                     </div>
                 </div>
-                <button class="btn-auth" onclick="verifyForgotEmail()">Verificar Correo</button>
+                <button class="btn-auth" type="button" onclick="verifyForgotEmail()">Enviar enlace de recuperación</button>
             </div>
 
-            <div id="forgot-step-2" style="display:none;">
-                <p style="color:#2ed573; font-size:0.9rem; margin-bottom:1rem;"><i class="fa-solid fa-circle-check"></i> Correo verificado. Escribe tu nueva contraseña.</p>
-                <div class="form-group-premium">
-                    <label>Nueva Contraseña</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-lock input-icon"></i>
-                        <input type="password" id="forgot-new-password" class="input-premium" placeholder="Mínimo 8 caracteres">
-                    </div>
-                </div>
-                <div class="form-group-premium">
-                    <label>Confirmar Contraseña</label>
-                    <div class="input-wrap">
-                        <i class="fa-solid fa-shield-halved input-icon"></i>
-                        <input type="password" id="forgot-confirm-password" class="input-premium" placeholder="Repite la contraseña">
-                    </div>
-                </div>
-                <button class="btn-auth" onclick="resetPassword()">Cambiar Contraseña <i class="fa-solid fa-arrow-right"></i></button>
-            </div>
+            <p id="forgot-reset-message" class="forgot-reset-message" aria-live="polite"></p>
         </div>
     </div>
 
-    <!-- Firebase Realtime Database SDK (Google Cloud) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <aside class="storage-consent" id="storage-consent" aria-labelledby="storage-consent-title" hidden>
+        <div>
+            <h2 id="storage-consent-title">Almacenamiento esencial</h2>
+            <p>Usamos almacenamiento local necesario para mantener tu sesión y el funcionamiento de la tienda. No activamos cookies publicitarias ni de seguimiento.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="accept-essential-storage">Aceptar y continuar</button>
+    </aside>
+
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
     <script src="firebase-db.js"></script>
 
     <script src="script.js"></script>
+    <script type="module" src="auth-mfa.js"></script>
 </body>
 </html>

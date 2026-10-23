@@ -7,13 +7,8 @@
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="auth-guard.js"></script>
-    <script>
-        // Auth Check Inmediato
-        if (!localStorage.getItem('confort_current_user')) {
-            window.location.href = 'login.html';
-        }
-    </script>
+    <style>html.auth-pending body { visibility: hidden; }</style>
+    <script>document.documentElement.classList.add('auth-pending');</script>
 </head>
 <body>
     <!-- Toast Container -->
@@ -40,7 +35,7 @@
 
     <div class="dashboard-layout">
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" aria-label="Menú de cuenta">
             <div class="user-profile">
                 <div class="avatar" id="avatar-initial">U</div>
                 <div class="user-info">
@@ -50,7 +45,7 @@
                 </div>
             </div>
 
-            <nav class="sidebar-nav">
+            <nav class="sidebar-nav" aria-label="Navegación de cuenta">
                 <a href="#" class="sidebar-link active" data-tab="tab-overview">
                     <i class="fa-solid fa-chart-pie"></i> Resumen
                 </a>
@@ -63,14 +58,15 @@
                 <a href="#" class="sidebar-link" data-tab="tab-settings">
                     <i class="fa-solid fa-gear"></i> Configuración
                 </a>
-                <!-- Solo visible para admin -->
-                <a href="admin.html" class="sidebar-link" id="admin-link" style="display:none; color:var(--gold-primary);">
-                    <i class="fa-solid fa-shield-halved"></i> Panel Admin BCP
-                </a>
-                <a href="#" class="sidebar-link" onclick="logout(event)" style="margin-top: 1rem; color: #ff4757;">
-                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                <a href="admin.html" class="sidebar-link" id="admin-link" style="display:none;">
+                    <i class="fa-solid fa-shield-halved"></i> Panel de Administración
                 </a>
             </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="sidebar-link sidebar-link-logout" onclick="logout(event)">
+                    <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                </a>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -191,9 +187,11 @@
     </div>
 
     <!-- Firebase Realtime Database SDK (Google Cloud) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-database-compat.js"></script>
     <script src="firebase-db.js"></script>
+    <script src="auth-guard.js"></script>
 
     <script src="script.js"></script>
     <script>
