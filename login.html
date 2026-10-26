@@ -232,7 +232,7 @@
 
                 <section class="auth-mfa-panel" id="login-mfa-step" hidden aria-labelledby="login-mfa-title">
                     <h3 id="login-mfa-title">Verificación en dos pasos</h3>
-                    <p>Abre tu aplicación autenticadora e ingresa el código actual de 6 dígitos.</p>
+                    <p>Esta cuenta tiene verificación en dos pasos habilitada. Ingresa el código actual de tu aplicación autenticadora.</p>
                     <form id="login-mfa-form" novalidate>
                         <label for="login-mfa-code">Código de autenticación</label>
                         <input id="login-mfa-code" class="input-premium mfa-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="login-mfa-error">
@@ -241,22 +241,10 @@
                     </form>
                 </section>
 
-                <section class="auth-mfa-panel" id="login-mfa-enroll" hidden aria-labelledby="login-mfa-enroll-title">
-                    <h3 id="login-mfa-enroll-title">Protege tu cuenta con una app autenticadora</h3>
-                    <p>Agrega Confort Market en tu aplicación usando esta clave. Secreto de configuración: no la compartas.</p>
-                    <code class="totp-secret" id="login-totp-secret"></code>
-                    <form id="login-totp-enroll-form" novalidate>
-                        <label for="login-totp-code">Código de 6 dígitos de la aplicación</label>
-                        <input id="login-totp-code" class="input-premium mfa-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="login-totp-error">
-                        <div class="field-error" id="login-totp-error" aria-live="polite"></div>
-                        <button type="submit" class="btn-auth">Activar verificación</button>
-                    </form>
-                </section>
-
                 <div class="auth-divider"><span>seguridad</span></div>
                 <div class="security-badge-row">
                     <i class="fa-solid fa-shield-halved"></i>
-                    Inicio de sesión con verificación TOTP de Firebase
+                    Inicio de sesión protegido por Firebase
                 </div>
 
                 <div class="auth-footer-link">

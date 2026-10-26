@@ -21,10 +21,6 @@
         }
 
         try {
-            if (!user.multiFactor.enrolledFactors.length) {
-                redirectToLogin();
-                return;
-            }
             const token = await user.getIdTokenResult();
             const isAdmin = token.claims.admin === true || token.claims.role === 'admin';
             if (currentPage === 'admin.html' && !isAdmin) {

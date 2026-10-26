@@ -4,7 +4,6 @@ import {
     createUserWithEmailAndPassword,
     getAuth,
     getMultiFactorResolver,
-    multiFactor,
     sendEmailVerification,
     sendPasswordResetEmail,
     setPersistence,
@@ -26,8 +25,6 @@ const authReady = setPersistence(auth, browserLocalPersistence);
 const CONSENT_KEY = 'confort_storage_consent';
 
 let pendingResolver = null;
-let pendingTotpSecret = null;
-let pendingMfaUser = null;
 
 const showToast = (message, type = 'info') => {
     if (typeof window.showToast === 'function') {
@@ -44,16 +41,6 @@ const requireEssentialStorageConsent = () => {
     showToast('Acepta el almacenamiento esencial para continuar.', 'error');
     document.getElementById('storage-consent')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     return false;
-};
-
-const showStep = (activeId, relatedIds) => {
-    relatedIds.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.hidden = id !== activeId;
-    });
-    const active = document.getElementById(activeId);
-    const input = active?.querySelector('input');
-    if (input) input.focus();
 };
 
 const getErrorMessage = (error) => {
@@ -136,58 +123,6 @@ const saveAuthenticatedUser = async (user) => {
     window.location.replace(role === 'admin' ? 'admin.html' : 'dashboard.html');
 };
 
-const beginTotpEnrollment = async (user, mode) => {
-    pendingMfaUser = user;
-    pendingTotpSecret = await TotpMultiFactorGenerator.generateSecret(
-        await multiFactor(user).getSession()
-    );
-
-    const prefix = mode === 'register' ? 'register' : 'login';
-    const secretElement = document.getElementById(`${prefix}-totp-secret`);
-    if (!secretElement) throw new Error('No se encontró el campo para mostrar la clave de configuración TOTP.');
-
-    secretElement.textContent = pendingTotpSecret.secretKey;
-    showStep(
-        mode === 'register' ? 'register-mfa-enroll' : 'login-mfa-enroll',
-        mode === 'register'
-            ? ['register-form', 'register-mfa-enroll']
-            : ['login-form', 'login-mfa-step', 'login-mfa-enroll']
-    );
-};
-
-const finishEnrollment = async (form, input, errorElementId, mode) => {
-    const code = input.value.trim();
-    const errorElement = document.getElementById(errorElementId);
-    if (!/^\d{6}$/.test(code)) {
-        errorElement.textContent = 'Ingresa el código vigente de 6 dígitos.';
-        input.focus();
-        return;
-    }
-
-    setFormBusy(form, true, 'Verificando código…');
-    errorElement.textContent = '';
-    try {
-        const assertion = TotpMultiFactorGenerator.assertionForEnrollment(pendingTotpSecret, code);
-        await multiFactor(pendingMfaUser).enroll(assertion, 'Aplicación autenticadora');
-        const user = pendingMfaUser;
-        pendingMfaUser = null;
-        pendingTotpSecret = null;
-        await saveAuthenticatedUser(user);
-    } catch (error) {
-        console.error('No se pudo completar el enrolamiento TOTP:', error);
-        errorElement.textContent = error.code === 'auth/invalid-verification-code'
-            ? 'El código no es válido o ya venció. Revisa tu aplicación e inténtalo de nuevo.'
-            : getErrorMessage(error);
-        setFormBusy(form, false);
-        input.select();
-        return;
-    }
-
-    if (mode === 'register') {
-        showToast('Cuenta creada y verificación en dos pasos activada.', 'success');
-    }
-};
-
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
     registerForm.addEventListener('submit', async event => {
@@ -225,9 +160,9 @@ if (registerForm) {
             showToast('Cuenta creada. Revisa tu correo y verifica la dirección antes de iniciar sesión.', 'success');
         } catch (error) {
             console.error('No se pudo crear la cuenta Firebase:', error);
-            if (auth.currentUser && !multiFactor(auth.currentUser).enrolledFactors.length) {
+            if (auth.currentUser) {
                 try {
-                    await auth.signOut();
+                    await signOut(auth);
                 } catch (signOutError) {
                     console.error('No se pudo cerrar la sesión incompleta:', signOutError);
                 }
@@ -256,11 +191,6 @@ if (loginForm) {
                 await signOut(auth);
                 showToast('Te reenviamos el enlace de verificación. Revisa tu correo antes de iniciar sesión.', 'info');
                 setFormBusy(loginForm, false);
-                return;
-            }
-            if (multiFactor(credential.user).enrolledFactors.length === 0) {
-                await beginTotpEnrollment(credential.user, 'login');
-                showToast('Configura la aplicación autenticadora para completar el acceso.', 'info');
                 return;
             }
             await saveAuthenticatedUser(credential.user);
@@ -324,36 +254,6 @@ if (loginMfaForm) {
             setFormBusy(loginMfaForm, false);
             codeInput.select();
         }
-    });
-}
-
-const registerTotpForm = document.getElementById('register-totp-form');
-if (registerTotpForm) {
-    registerTotpForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        if (!requireEssentialStorageConsent()) return;
-        if (!registerTotpForm.reportValidity()) return;
-        await finishEnrollment(
-            registerTotpForm,
-            document.getElementById('register-totp-code'),
-            'register-totp-error',
-            'register'
-        );
-    });
-}
-
-const loginTotpForm = document.getElementById('login-totp-enroll-form');
-if (loginTotpForm) {
-    loginTotpForm.addEventListener('submit', async event => {
-        event.preventDefault();
-        if (!requireEssentialStorageConsent()) return;
-        if (!loginTotpForm.reportValidity()) return;
-        await finishEnrollment(
-            loginTotpForm,
-            document.getElementById('login-totp-code'),
-            'login-totp-error',
-            'login'
-        );
     });
 }
 

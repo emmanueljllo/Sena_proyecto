@@ -235,18 +235,6 @@
                     </button>
                 </form>
 
-                <section class="auth-mfa-panel" id="register-mfa-enroll" hidden aria-labelledby="register-mfa-title">
-                    <h3 id="register-mfa-title">Configura tu aplicación autenticadora</h3>
-                    <p>Agrega Confort Market en tu app TOTP con esta clave. Guárdala de forma privada y nunca la compartas.</p>
-                    <code class="totp-secret" id="register-totp-secret"></code>
-                    <form id="register-totp-form" novalidate>
-                        <label for="register-totp-code">Código de 6 dígitos de la aplicación</label>
-                        <input id="register-totp-code" class="input-premium mfa-code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required aria-describedby="register-totp-error">
-                        <div class="field-error" id="register-totp-error" aria-live="polite"></div>
-                        <button type="submit" class="btn-auth">Activar verificación</button>
-                    </form>
-                </section>
-
                 <div class="security-badge-row">
                     <i class="fa-solid fa-lock"></i>
                     Contraseña administrada de forma segura por Firebase Authentication
