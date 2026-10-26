@@ -5,8 +5,10 @@ import {
     getAuth,
     getMultiFactorResolver,
     multiFactor,
+    sendEmailVerification,
     sendPasswordResetEmail,
     setPersistence,
+    signOut,
     signInWithEmailAndPassword,
     TotpMultiFactorGenerator,
     updateProfile
@@ -218,7 +220,9 @@ if (registerForm) {
                 passwordInput.value
             );
             await updateProfile(credential.user, { displayName: usernameInput.value.trim() });
-            await beginTotpEnrollment(credential.user, 'register');
+            await sendEmailVerification(credential.user);
+            await signOut(auth);
+            showToast('Cuenta creada. Revisa tu correo y verifica la dirección antes de iniciar sesión.', 'success');
         } catch (error) {
             console.error('No se pudo crear la cuenta Firebase:', error);
             if (auth.currentUser && !multiFactor(auth.currentUser).enrolledFactors.length) {
@@ -247,6 +251,13 @@ if (loginForm) {
         try {
             await authReady;
             const credential = await signInWithEmailAndPassword(auth, email, password);
+            if (!credential.user.emailVerified) {
+                await sendEmailVerification(credential.user);
+                await signOut(auth);
+                showToast('Te reenviamos el enlace de verificación. Revisa tu correo antes de iniciar sesión.', 'info');
+                setFormBusy(loginForm, false);
+                return;
+            }
             if (multiFactor(credential.user).enrolledFactors.length === 0) {
                 await beginTotpEnrollment(credential.user, 'login');
                 showToast('Configura la aplicación autenticadora para completar el acceso.', 'info');
